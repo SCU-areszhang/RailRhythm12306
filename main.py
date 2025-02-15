@@ -424,11 +424,7 @@ while s != "exit":
                 no_list = json.load(f2)
             print("Load over")
             count_code()
-            for i in train_list:
-                train_list[i][0]["start_station_name"] = train_list[i][0]["start_station_name"].replace(" ", "")
-                train_list[i][0]["end_station_name"] = train_list[i][0]["end_station_name"].replace(" ", "")
-                for j in train_list[i]:
-                    j["station_name"] = j["station_name"].replace(" ", "")
+
         else:
             print("File is not exist, load fail")
         continue
