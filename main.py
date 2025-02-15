@@ -168,11 +168,23 @@ def search_link(st, ed, sort_order = "st", prefix = "GDCKTZSYP"):
     visible = 0
     index = {}
     for i in train_list:
+        st_flag = False
+        ed_flag = False
         for j in train_list[i]:
-            if j["station_name"] in st and not i in list_st:
-                list_st[i] = j
-            if j["station_name"] in ed and not i in list_ed:
-                list_ed[i] = j
+            if j["station_name"] in st:
+                st_flag = True
+            if j["station_name"] in ed:
+                ed_flag = True
+        if not st_flag or not ed_flag:
+            continue
+        for st_station in st[::-1]:
+            for j in train_list[i]:
+                if j["station_name"] == st_station:
+                    list_st[i] = j
+        for ed_station in ed[::-1]:
+            for j in train_list[i]:
+                if j["station_name"] == ed_station:
+                    list_ed[i] = j
     for i in list_st:
         if i in list_ed and int(list_st[i]["station_no"]) < int(list_ed[i]["station_no"]):
             cnt += 1
@@ -382,6 +394,11 @@ while s != "exit":
         else:
             print("Date format not correct")
             continue
+    if bool(re.match(r'^\d{4}-\d{2}-\d{2}$', s)):
+        print("Date has been changed from", auto_date, "to", s)
+        auto_date = s
+        auto_date_1 = auto_date.replace("-", "")
+        s = "load"
 
     # 保存数据
     if s.lower() == "save":

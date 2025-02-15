@@ -81,29 +81,23 @@ D prefix train code information downloaded
 Sample input & output
 ```aiignore
 Welcome to the Rail Rhythm railway timetable query tool
-Current date setting: 2025-02-01
-# 以下是修改时间为2月5日的操作
-Input instruction: time
-Current date setting: 2025-02-01
-Input time setting (xxxx-xx-xx) : 2025-02-05
-# 以下是读取操作
-Input instruction: load
+Current date setting: 2025-02-15
+# 更改日期设置，自动读取
+Input instruction: 2025-02-23
+Date has been changed from 2025-02-15 to 2025-02-23
 Load over
-# 以下是数据总览操作
-Input instruction: Sum
-Train sum: 17525
-G : 6451
-D : 3851
-C : 3483
-Z : 309
-T : 227
-K : 2064
-S : 792
-Y : 15
-Pure number : 333
-Input instruction: 
-# 可以看到，所有类型车次数量都在正常范围，显然成功导入了
-# 2月5日属于春运返程高峰期间，车次较其他日期多一些
+Train sum:	 15504 	( 11914 )
+G prefix	 5548 	( 4280 )
+D prefix	 3300 	( 2486 )
+C prefix	 3034 	( 2431 )
+Z prefix	 311 	( 201 )
+T prefix	 213 	( 150 )
+K prefix	 1941 	( 1305 )
+S prefix	 807 	( 783 )
+Y prefix	 14 	( 8 )
+Pure number	 336 	( 270 )
+# 可以看到所有类型车次数量都在正常范围，显然成功导入了
+# 两列数字，分别是在重复和不重复计算车次变更下的计数
 ```
 
 ## 3 按车次查询
