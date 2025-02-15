@@ -169,9 +169,9 @@ def search_link(st, ed, sort_order = "st", prefix = "GDCKTZSYP"):
     index = {}
     for i in train_list:
         for j in train_list[i]:
-            if j["station_name"] in st and ((i in list_st) == False):
+            if j["station_name"] in st and not i in list_st:
                 list_st[i] = j
-            if j["station_name"] in ed and ((i in list_ed) == False):
+            if j["station_name"] in ed and not i in list_ed:
                 list_ed[i] = j
     for i in list_st:
         if i in list_ed and int(list_st[i]["station_no"]) < int(list_ed[i]["station_no"]):
