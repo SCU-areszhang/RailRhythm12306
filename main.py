@@ -364,7 +364,7 @@ while s != "exit":
                 print(len(train_list), "train numbers in total")
         continue
 
-    # 时间设置，时间设置之后自动导入
+    # 时间设置，时间设置之后自动读取
     if s.lower() == "time" or s.lower() == "date":
         print("Current date setting:", auto_date)
         auto_date = input("Input time setting (xxxx-xx-xx) : ")
