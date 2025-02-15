@@ -402,6 +402,11 @@ while s != "exit":
 
     # 保存数据
     if s.lower() == "save":
+        for i in train_list:
+            train_list[i][0]["start_station_name"] = train_list[i][0]["start_station_name"].replace(" ", "")
+            train_list[i][0]["end_station_name"] = train_list[i][0]["end_station_name"].replace(" ", "")
+            for j in train_list[i]:
+                j["station_name"] = j["station_name"].replace(" ", "")
         with open('train_data/train_list' + auto_date_1 + '.json', 'w') as f1:
             json.dump(train_list, f1)
         with open('train_data/no_list' + auto_date_1 + '.json', 'w') as f2:
