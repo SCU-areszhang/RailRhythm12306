@@ -1,7 +1,7 @@
 # Rail Rhythm 中国铁路时刻表查询工具
 # wj_0575 2025.1
 import os.path
-
+import re
 import requests
 import json
 
@@ -344,7 +344,7 @@ while s != "exit":
         continue
     if s in callback:
         s = callback[s]
-    if s[0:6].lower() == "import":
+    if s[0:6].lower() == "import": # 联网导入
         type = s[-1:].upper()
         if type in ['G', 'D', 'C', 'Z', 'T', 'K', 'S', 'Y']:
             get_all_info(type)
@@ -363,6 +363,19 @@ while s != "exit":
                     print(h, "prefix train code information downloaded")
                 print(len(train_list), "train numbers in total")
         continue
+
+    # 时间设置，时间设置之后自动导入
+    if s.lower() == "time" or s.lower() == "date":
+        print("Current date setting:", auto_date)
+        auto_date = input("Input time setting (xxxx-xx-xx) : ")
+        if bool(re.match(r'^\d{4}-\d{2}-\d{2}$', auto_date)):
+            auto_date_1 = auto_date.replace("-", "")
+            s = "load"
+        else:
+            print("Date format not correct")
+            continue
+
+    # 保存数据
     if s.lower() == "save":
         with open('train_data/train_list' + auto_date_1 + '.json', 'w') as f1:
             json.dump(train_list, f1)
@@ -370,6 +383,8 @@ while s != "exit":
             json.dump(no_list, f2)
         print("Save over")
         continue
+
+    # 载入数据
     if s.lower() == "load":
         if (os.path.exists('train_data/train_list' + auto_date_1 + '.json') and
                 os.path.exists('train_data/no_list' + auto_date_1 + '.json')):
@@ -378,9 +393,12 @@ while s != "exit":
             with open('train_data/no_list' + auto_date_1 + '.json', 'r') as f2:
                 no_list = json.load(f2)
             print("Load over")
+            count_code()
         else:
             print("File is not exist, load fail")
         continue
+
+    # 同城车站清单编辑
     if s.lower() == "city_station":
         while True:
             new = input("City name: ")
@@ -396,18 +414,19 @@ while s != "exit":
             json.dump(city_station, f1)
         print("City stations data save over")
         continue
-    if s.lower() == "time" or s.lower() == "date":
-        print("Current date setting:" ,auto_date)
-        auto_date = input("Input time setting (xxxx-xx-xx) : ")
-        auto_date_1 = auto_date.replace("-", "")
-        continue
+
+    # 编辑user-agent
     if s.lower() == "agent":
         print("Current simulated user-agent:", headers["User-Agent"])
         headers["User-Agent"] = input("Input user-agent setting: ")
         continue
+
+    # 车次计数
     if s.lower() == "sum":
         count_code()
         continue
+
+    # 回溯
     if trace_code > 1 and (s == "<<" or s == "《《"):
         trace_code -= 1
         s = trace[trace_code-1]
@@ -424,10 +443,14 @@ while s != "exit":
         trace[trace_code] = s
         trace_code += 1
         trace_max = trace_code
+
+    # 处理字头筛选
     r = "GDCKTZSYP"
     if "*" in s:
         s, pre = s.split("*")
         r = pre.upper()
+
+    # 车次查
     if s[0:4].lower() == "code" or s[0] == '.':
         if s[0:4].lower() == "code":
             target = s[5:].upper()
@@ -438,6 +461,8 @@ while s != "exit":
         else:
             print("Not found")
         continue
+
+    # 按站点查
     if s[0:7].lower() == "station" or s[-1:] == "站" or s.find("+") > 1 and s[s.find("+")-1] == "站":
         if s[0:7].lower() == "station":
             target = s[8:]
@@ -451,6 +476,8 @@ while s != "exit":
         else:
             callback = search_station(target, prefix = r)
         continue
+
+    # 同城车站处理
     if "--" in s:
         if s.count('-') > 2:
             trace_code -= 1
@@ -476,6 +503,8 @@ while s != "exit":
             s = s + ed
         if add != "":
             s = s + "+" + add
+
+    # 站站查
     if "-" in s:
         if s.count('-') > 1:
             trace_code -= 1
