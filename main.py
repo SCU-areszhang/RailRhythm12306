@@ -315,15 +315,23 @@ def get_all_info(head):
 
 
 def count_code():
-    print("Train sum:", len(no_list))
-    cnt = {'G': 0, 'D': 0, 'C': 0, 'Z': 0, 'T': 0, 'K': 0, 'S': 0, 'Y': 0, 'Pure number': 0, }
+    print("Train sum:\t", len(no_list), '\t(', len(train_list), ')')
+    cnt_code = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
+                'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
+    cnt_train = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
+                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
     for i in no_list:
         if i[0].isdigit():
-            cnt['Pure number'] += 1
+            cnt_code['Pure number'] += 1
         else:
-            cnt[i[0]] += 1
-    for i in cnt:
-        print(i, ":", cnt[i])
+            cnt_code[i[0] + ' prefix'] += 1
+    for i in train_list:
+        if train_list[i][0]["station_train_code"][0].isdigit():
+            cnt_train['Pure number'] += 1
+        else:
+            cnt_train[train_list[i][0]["station_train_code"][0] + ' prefix'] += 1
+    for i in cnt_code:
+        print(i + "\t", cnt_code[i], '\t(', cnt_train[i], ')')
 
 s = ""
 callback = {} # 跳转数据

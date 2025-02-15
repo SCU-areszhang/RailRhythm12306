@@ -76,7 +76,7 @@ D prefix train code information downloaded
 
 ### 2.3 数据总览
 
-输入命令`Sum`，可以总览目前数据库中的车次。这个命令一般在`Load`之后使用，方便了解目前数据库中已经包含了哪些字头的车次数据，如果有需要再导入新的。
+输入命令`Sum`，可以总览目前数据库中的车次。这个命令也会在`Load`之后自动调用，方便了解目前数据库中已经包含了哪些字头的车次数据，如果有需要再导入新的。
 
 Sample input & output
 ```aiignore
