@@ -424,7 +424,6 @@ while s != "exit":
                 no_list = json.load(f2)
             print("Load over")
             count_code()
-
         else:
             print("File is not exist, load fail")
         continue
