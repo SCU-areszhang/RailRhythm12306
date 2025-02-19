@@ -313,10 +313,10 @@ def get_all_info(head):
             continue
         for i in resp:
             code = i["station_train_code"]
-            if (code in no_list) == False:
+            if not code in no_list:
                 no = i["train_no"]
                 no_list[code] = no
-                if (no in train_list) == False:
+                if not no in train_list:
                     cnt += 1
                     info = get_train_info(i["train_no"])
                     if info == "error":
