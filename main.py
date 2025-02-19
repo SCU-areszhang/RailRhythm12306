@@ -4,6 +4,8 @@ import os.path
 import re
 import requests
 import json
+import threading
+import concurrent.futures
 
 from datetime import datetime
 current_date = datetime.now()
@@ -274,12 +276,15 @@ def get_train_no(x, date=auto_date_1):
     else:
         return "error"
 
+
 url_train_info = "https://kyfw.12306.cn/otn/queryTrainInfo/query"
 params_train_info = {
     "leftTicketDTO.train_no" : "",
     "leftTicketDTO.train_date" : "",
     "rand_code" : "",
 }
+
+
 def get_train_info(x, date=auto_date):
     """这个函数用于按照train_no查找具体信息
     返回一个字典"""
