@@ -292,4 +292,10 @@ Sample output #3
 
 ----
 
+### 正在尝试的改进方向
+
+多线程导入：不仅可以大幅提升爬取的速度，还可以用大量请求对抗12306的反爬机制。目前的难点在于写入字典的冲突。
+
+---
+
 ###### _**Love the rhythm of rails, love the veins of the world.**_
