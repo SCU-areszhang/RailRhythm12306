@@ -15,7 +15,10 @@ auto_date_1 = auto_date.replace("-","")
 # 12306一个系统居然有两种表示日期的方法
 
 train_list = {} # reference from train_no to detailed information
+lock_train_list = threading.Lock()
+
 no_list = {} # reference from train code to train_no
+lock_no_list = threading.Lock()
 
 headers = {
     "Accept":"*/*",
@@ -78,7 +81,6 @@ def print_train(x):
                 continue
             callback[i["station_no"] + "-" + j["station_no"]] = i["station_name"] + "-" + j["station_name"]
     return callback
-
 
 def search_station(x, t1='00:00', t2='24:00', sort_order = "", prefix = "GDCKTZSYP"):
     """这个函数用来查找车站的时刻表
@@ -249,13 +251,10 @@ def search_link(st, ed, sort_order = "st", prefix = "GDCKTZSYP"):
     return callback
 
 
-
 url_train_no = "https://search.12306.cn/search/v1/train/search"
-params_train_no = {
-    "keyword" : "",
-    "date" : ""
-    # keyword=G1&date=20250114
-}
+url_train_info = "https://kyfw.12306.cn/otn/queryTrainInfo/query"
+
+
 def get_train_no(x, date=auto_date_1):
     """这个函数用于匹配和查找车次信息
     即train_no编号
@@ -264,8 +263,7 @@ def get_train_no(x, date=auto_date_1):
     所以当输入的车次号数字部分不少于两位的时候
     此函数返回的字典中将包含所有匹配车次的train_no编号
     输入的x是关键字 示例 G1 G10 5"""
-    params_train_no["keyword"] = x
-    params_train_no["date"] = date
+    params_train_no = {"keyword": x, "date": date}
     resp = requests.get(url=url_train_no, params=params_train_no, headers=headers)
     if resp.status_code == 200:
         js = resp.json()
@@ -277,59 +275,66 @@ def get_train_no(x, date=auto_date_1):
         return "error"
 
 
-url_train_info = "https://kyfw.12306.cn/otn/queryTrainInfo/query"
-params_train_info = {
-    "leftTicketDTO.train_no" : "",
-    "leftTicketDTO.train_date" : "",
-    "rand_code" : "",
-}
-
-
 def get_train_info(x, date=auto_date):
-    """这个函数用于按照train_no查找具体信息
-    返回一个字典"""
-    params_train_info["leftTicketDTO.train_no"] = x
-    params_train_info["leftTicketDTO.train_date"] = date
+    params_train_info = {"leftTicketDTO.train_no": x, "leftTicketDTO.train_date": date, "rand_code": ""}
     resp = requests.get(url=url_train_info, params=params_train_info, headers=headers)
     if resp.status_code == 200:
         data = resp.json()["data"]["data"]
         resp.close()
         if data is None:
             return "error"
-        for sta in data:
-            if "is_start" in sta:
-                sta["stop_time"] = 0
+        for station in data:
+            if "is_start" in station:
+                station["stop_time"] = 0
             else:
-                sta["stop_time"] = time_interval(sta["arrive_time"], sta["start_time"])
-        return data
-    else:
-        return "error"
+                station["stop_time"] = time_interval(station["arrive_time"], station["start_time"])
+        lock_train_list.acquire()
+        try:
+            train_list[x] = data
+        finally:
+            lock_train_list.release()
 
+
+def get_all_target_info(key):
+    cnt = 0
+    # print("get")
+    while True:
+        cnt += 1
+        if cnt % 50 == 0:
+            print(target + "refused" + str(cnt) + "\n" ,end="")
+        if cnt == 100:
+            print(key + "failed" + "\n" ,end="")
+            return
+        resp = get_train_no(key)
+        if not resp == "error":
+            break
+    threads = []
+    for train_no in resp:
+        code = train_no["station_train_code"]
+        if not code in no_list:
+            no = train_no["train_no"]
+            lock_no_list.acquire()
+            try:
+                no_list[code] = no
+            finally:
+                lock_no_list.release()
+            if not no in train_list:
+                thread = threading.Thread(target=get_train_info, args=(no, auto_date))
+                thread.start()
+                threads.append(thread)
+    for thread in threads:
+        thread.join()
+    print(str(key) + "finish" + "\n", end="")
 
 def get_all_info(head):
-    cnt = 0
-    for num in range(1,100):
-        resp = get_train_no(head+str(num))
-        print(str(num)+"%", cnt,"piece of data getted")
-        if resp == "empty":
-            continue
-        if resp == "error":
-            print("request error when getting related trains of",head+str(num))
-            continue
-        for i in resp:
-            code = i["station_train_code"]
-            if not code in no_list:
-                no = i["train_no"]
-                no_list[code] = no
-                if not no in train_list:
-                    cnt += 1
-                    info = get_train_info(i["train_no"])
-                    if info == "error":
-                        print("request error when getting train schedule of", i["train_no"])
-                        continue
-                    else:
-                        train_list[no] = info
-
+    threads = []
+    for num in range(1, 100):
+        code = head + str(num)
+        thread = threading.Thread(target=get_all_target_info, args=(code,))
+        thread.start()
+        threads.append(thread)
+    for thread in threads:
+        thread.join()
 
 def count_code():
     print("Train sum:\t", len(no_list), '\t(', len(train_list), ')')
@@ -337,18 +342,18 @@ def count_code():
                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
     cnt_train = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
                  'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
-    for i in no_list:
-        if i[0].isdigit():
+    for train in no_list:
+        if train[0].isdigit():
             cnt_code['Pure number'] += 1
         else:
-            cnt_code[i[0] + ' prefix'] += 1
-    for i in train_list:
-        if train_list[i][0]["station_train_code"][0].isdigit():
+            cnt_code[train[0] + ' prefix'] += 1
+    for train in train_list:
+        if train_list[train][0]["station_train_code"][0].isdigit():
             cnt_train['Pure number'] += 1
         else:
-            cnt_train[train_list[i][0]["station_train_code"][0] + ' prefix'] += 1
-    for i in cnt_code:
-        print(i + "\t", cnt_code[i], '\t(', cnt_train[i], ')')
+            cnt_train[train_list[train][0]["station_train_code"][0] + ' prefix'] += 1
+    for prefix in cnt_code:
+        print(prefix + "\t", cnt_code[prefix], '\t(', cnt_train[prefix], ')')
 
 s = ""
 callback = {} # 跳转数据
@@ -491,10 +496,12 @@ while s != "exit":
             target = s[5:].upper()
         else:
             target = s[1:].upper()
-        if target in no_list:
-            callback = print_train(train_list[no_list[target]])
+        if not target in no_list:
+            print("Code not found")
+        elif not no_list[target] in train_list:
+            print("Not operate on the appointed date")
         else:
-            print("Not found")
+            callback = print_train(train_list[no_list[target]])
         continue
 
     # 按站点查
