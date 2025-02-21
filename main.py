@@ -20,6 +20,9 @@ lock_train_list = threading.Lock()
 no_list = {} # reference from train code to train_no
 lock_no_list = threading.Lock()
 
+task_callback = {"success": 0, "failed": 0}
+lock_task = threading.Lock
+
 headers = {
     "Accept":"*/*",
     "Connection":"keep-alive",
