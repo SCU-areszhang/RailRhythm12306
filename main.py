@@ -37,7 +37,7 @@ headers = {
 }
 
 def time_interval(time_start, time_end):
-    """计算时间间隔的函数"""
+    """计算时间间隔的函数，输入的两个时间必须是hh:mm格式，时间单位为分，可以处理跨午夜的情况"""
     start_hour = int(time_start[0:2])
     start_minute = int(time_start[3:5])
     end_hour = int(time_end[0:2])
@@ -51,6 +51,7 @@ def time_interval(time_start, time_end):
     return interval
 
 def count_code():
+    """用来统计车次数量的函数，无返回值"""
     print("Train sum:\t", len(no_list), '\t(', len(train_list), ')')
     cnt_code = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
@@ -189,6 +190,8 @@ def search_station(x, t1='00:00', t2='24:00', sort_order = "", prefix = "GDCKTZS
     return callback
 
 def search_link(st, ed, sort_order = "st", prefix = "GDCKTZSYP"):
+    """起止站搜索，st，ed是两个列表，表示起止站，sort_order表示结果的排序方式，分为st，ed，v。
+    prefix表示车次前缀的筛选范围"""
     callback = {}
     if len(set(st) & set(ed)) > 0:
         print("The set of starting and ending stations include same element")
@@ -324,6 +327,8 @@ def get_train_info(x, date=auto_date):
 
 
 def get_all_target_info(key):
+    """这个函数控制get_train_no和get_train_info两个函数
+    把目标字段的所有车次号查出train_no并且根据train_no加载时刻表数据"""
     cnt = 0
     while True:
         cnt += 1
@@ -338,7 +343,6 @@ def get_all_target_info(key):
         if (not resp == "error") and (not resp == "empty"):
             break
     threads = []
-    time.sleep(0.5)
     for train in resp:
         code = train["station_train_code"]
         if not code in no_list:
@@ -364,7 +368,7 @@ def get_all_target_info(key):
 def get_all_info(keys):
     """这个函数负责开启各个车次号查询字段的多线程
     得到的结果载入no_list和train_list
-    head是一个列表，包括需要查询的车次号字段"""
+    keys是一个列表，包括需要查询的车次号字段，并且经过了预处理"""
     print("Starting threads...")
     threads = []
     for key in task_callback:
