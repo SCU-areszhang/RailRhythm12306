@@ -115,6 +115,9 @@ def search_station(x, t1='00:00', t2='24:00', sort_order = "", prefix = "GDCKTZS
                     "class": train_list[i][0]["train_class_name"]
                 }
                 cnt += 1
+    if cnt == 0:
+        print("Unable to find station \"" + x + "\" please check input or load data first")
+        return {}
     print(x, '\t', t1, '-', t2, "\t", cnt, "results")
     callback = {}
     for i in sorted(table.keys()):
@@ -446,14 +449,28 @@ while s != "exit":
     if s.lower() == "city_station":
         while True:
             new = input("City name: ")
+            if new in city_station:
+                print(new, " ", city_station[new])
+                tmp = city_station[new]
+            else:
+                print(new, "new in city_station list")
+                tmp = "tmp"
+            city_station[new] = []
             if new == "save" or new == "exit":
                 break
             station_name = ""
             city_station[new] = []
             n = input("Station name: ")
-            while n != "0" and n.lower() != "end":
+            if n == "delete" or n == "删除":
+                city_station.pop(new)
+                continue
+            while n != "0" and n.lower() != "end" and n.lower() != "undo":
                 city_station[new].append(n)
                 n = input("Station name: ")
+            if n.lower() == "undo":
+                city_station[new] = tmp
+                if tmp == "tmp":
+                    city_station.pop(new)
         with open('city_station.json', 'w') as f1:
             json.dump(city_station, f1)
         print("City stations data save over")
