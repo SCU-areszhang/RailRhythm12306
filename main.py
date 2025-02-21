@@ -7,7 +7,6 @@ import time
 import requests
 import json
 import threading
-import concurrent.futures
 
 from datetime import datetime
 current_date = datetime.now()
@@ -23,7 +22,7 @@ no_list = {} # reference from train code to train_no
 lock_no_list = threading.Lock()
 
 task_callback = {"success": 0, "failed": 0}
-lock_task_callback = threading.Lock()
+lock_task_callback = threading.Lock() # 记录多线程爬取的状态
 
 headers = {
     "Accept":"*/*",
