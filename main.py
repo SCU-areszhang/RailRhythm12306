@@ -287,13 +287,11 @@ url_train_info = "https://kyfw.12306.cn/otn/queryTrainInfo/query"
 
 
 def get_train_no(x, date=auto_date_1):
-    """这个函数用于匹配和查找车次信息
-    即train_no编号
-    可以查一个也可以查多个
-    由于12306一次返回最多200条匹配车次的train_no编号
-    所以当输入的车次号数字部分不少于两位的时候
-    此函数返回的字典中将包含所有匹配车次的train_no编号
-    输入的x是关键字 示例 G1 G10 5"""
+    """这个函数用于匹配和查找车次信息，
+    即train_no编号，可以查一个也可以查多个，
+    由于12306一次返回最多200条匹配车次的train_no编号，
+    所以当输入的车次号数字部分不少于两位的时候，
+    此函数返回的字典中将包含所有匹配车次的train_no编号"""
     params_train_no = {"keyword": x, "date": date}
     resp = requests.get(url=url_train_no, params=params_train_no, headers=headers)
     if resp.status_code == 200:
