@@ -50,6 +50,26 @@ def time_interval(time_start, time_end):
         interval = 24 * 60 - start_total + end_total
     return interval
 
+def count_code():
+    print("Train sum:\t", len(no_list), '\t(', len(train_list), ')')
+    cnt_code = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
+                'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
+    cnt_train = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
+                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
+    for train in no_list:
+        if train[0].isdigit():
+            cnt_code['Pure number'] += 1
+        else:
+            cnt_code[train[0] + ' prefix'] += 1
+    for train in train_list:
+        if train_list[train][0]["station_train_code"][0].isdigit():
+            cnt_train['Pure number'] += 1
+        else:
+            cnt_train[train_list[train][0]["station_train_code"][0] + ' prefix'] += 1
+    for prefix in cnt_code:
+        print(prefix + "\t", cnt_code[prefix], '\t(', cnt_train[prefix], ')')
+
+
 def print_train(x):
     """这个函数用于输出一个车次的信息
     参数x为一个字典"""
@@ -317,8 +337,8 @@ def get_all_target_info(key):
         resp = get_train_no(key)
         if (not resp == "error") and (not resp == "empty"):
             break
-    # print(resp)
     threads = []
+    time.sleep(0.5)
     for train in resp:
         code = train["station_train_code"]
         if not code in no_list:
@@ -366,25 +386,6 @@ def get_all_info(keys):
     for thread in threads:
         thread.join()
 
-
-def count_code():
-    print("Train sum:\t", len(no_list), '\t(', len(train_list), ')')
-    cnt_code = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
-                'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
-    cnt_train = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
-                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
-    for train in no_list:
-        if train[0].isdigit():
-            cnt_code['Pure number'] += 1
-        else:
-            cnt_code[train[0] + ' prefix'] += 1
-    for train in train_list:
-        if train_list[train][0]["station_train_code"][0].isdigit():
-            cnt_train['Pure number'] += 1
-        else:
-            cnt_train[train_list[train][0]["station_train_code"][0] + ' prefix'] += 1
-    for prefix in cnt_code:
-        print(prefix + "\t", cnt_code[prefix], '\t(', cnt_train[prefix], ')')
 
 s = ""
 callback = {} # 跳转数据
