@@ -2,6 +2,8 @@
 # wj_0575 2025.1
 import os.path
 import re
+import time
+
 import requests
 import json
 import threading
@@ -21,7 +23,7 @@ no_list = {} # reference from train code to train_no
 lock_no_list = threading.Lock()
 
 task_callback = {"success": 0, "failed": 0}
-lock_task = threading.Lock
+lock_task_callback = threading.Lock()
 
 headers = {
     "Accept":"*/*",
@@ -274,8 +276,8 @@ def get_train_no(x, date=auto_date_1):
     if resp.status_code == 200:
         js = resp.json()
         resp.close()
-        if js["data"] == []:
-            return ("empty")
+        if not js["data"]:
+            return "empty"
         return js["data"]
     else:
         return "error"
@@ -305,13 +307,12 @@ def get_all_target_info(key):
     cnt = 0
     while True:
         cnt += 1
-        if cnt % 5 == 0:
-            print(key + "refused" + str(cnt) + "\n" ,end="")
-        if cnt == 10:
-            print(key + "failed" + "\n" ,end="")
+        if cnt == 5:
             lock_task_callback.acquire()
-            task_callback["failed"] += 1
-            lock_task_callback.release()
+            try:
+                task_callback["failed"] += 1
+            finally:
+                lock_task_callback.release()
             return
         resp = get_train_no(key)
         if (not resp == "error") and (not resp == "empty"):
@@ -333,24 +334,38 @@ def get_all_target_info(key):
                 threads.append(thread)
     for thread in threads:
         thread.join()
+    lock_task_callback.acquire()
+    try:
+        task_callback["success"] += 1
+    finally:
+        lock_task_callback.release()
+    return
 
 def get_all_info(keys):
     """这个函数负责开启各个车次号查询字段的多线程
     得到的结果载入no_list和train_list
     head是一个列表，包括需要查询的车次号字段"""
+    print("Starting threads...")
     threads = []
-    thread_num = 0
-    finished_thread_num = 0
-    for num in range(1, 100):
-        code = head + str(num)
-        thread = threading.Thread(target=get_all_target_info, args=(code,))
+    for key in task_callback:
+        task_callback[key] = 0
+    for key in keys:
+        thread = threading.Thread(target=get_all_target_info, args=(key,))
         thread.start()
         threads.append(thread)
-        thread_num += 1
+    total = len(keys)
+    while any(thread.is_alive() for thread in threads):
+        active_thread_count = sum(thread.is_alive() for thread in threads)
+        print(str(total - active_thread_count).rjust(3, ' ') + " / " +
+              str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
+              str(task_callback["failed"]) + " failed")
+        time.sleep(0.25)
+    print(str(total).rjust(3, ' ') + " / " +
+          str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
+          str(task_callback["failed"]) + " failed")
     for thread in threads:
         thread.join()
-        finished_thread_num += 1
-        print(finished_thread_num, "/", thread_num)
+
 
 def count_code():
     print("Train sum:\t", len(no_list), '\t(', len(train_list), ')')
@@ -391,23 +406,23 @@ while s != "exit":
     if s in callback:
         s = callback[s]
     if s[0:6].lower() == "import": # 联网导入
-        type = s[-1:].upper()
-        if type in ['G', 'D', 'C', 'Z', 'T', 'K', 'S', 'Y']:
-            get_all_info(type)
-            print(type, "prefix train code information downloaded")
-            print(len(train_list), "train numbers in total")
-        elif type == 'P':
-            get_all_info('')
-            print("Pure numerical numbering train information downloaded")
-            print(len(train_list), "train numbers in total")
-        elif type == 'A':
-            for h in ['G', 'D', 'C', 'Z', 'T', 'K', 'S', 'Y','']:
-                get_all_info(h)
-                if(h == ''):
-                    print("Pure numerical numbering train information downloaded")
+        head = []
+        type = s[7:].upper()
+        if 'A' in type:
+            type = "GDCZTKSYP"
+        for prefix in ['G', 'D', 'C', 'Z', 'T', 'K', 'S', 'Y', 'P']:
+            if prefix in type:
+                if prefix in ['Z', 'T', 'Y']:
+                    for num in range(1, 10):
+                        head.append(prefix + str(num))
+                elif prefix == 'P':
+                    for num in range(1, 10):
+                        head.append(str(num))
                 else:
-                    print(h, "prefix train code information downloaded")
-                print(len(train_list), "train numbers in total")
+                    for num in range(1, 100):
+                        head.append(prefix + str(num))
+        get_all_info(head)
+        count_code()
         continue
 
     # 时间设置，时间设置之后自动读取
