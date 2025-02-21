@@ -76,9 +76,9 @@ def count_code():
             cnt_train[train_list[train][0]["station_train_code"][0] + ' prefix'] += 1
     for prefix in cnt_code:
         if cnt_train[prefix] > check[prefix]:
-            print("    ", prefix + "\t", cnt_code[prefix], '\t(', cnt_train[prefix], ')')
+            print("   ", prefix + "\t", cnt_code[prefix], '\t(', cnt_train[prefix], ')')
         else:
-            print("  ? ", prefix + "\t", cnt_code[prefix], '\t(', str(cnt_train[prefix]) , ')')
+            print(" ? ", prefix + "\t", cnt_code[prefix], '\t(', str(cnt_train[prefix]) , ')')
     line_cut()
 
 def print_train(x):
