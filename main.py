@@ -297,22 +297,22 @@ def get_train_info(x, date=auto_date):
 
 def get_all_target_info(key):
     cnt = 0
-    # print("get")
     while True:
         cnt += 1
-        if cnt % 50 == 0:
-            print(target + "refused" + str(cnt) + "\n" ,end="")
-        if cnt == 100:
+        if cnt % 5 == 0:
+            print(key + "refused" + str(cnt) + "\n" ,end="")
+        if cnt == 10:
             print(key + "failed" + "\n" ,end="")
             return
         resp = get_train_no(key)
-        if not resp == "error":
+        if (not resp == "error") and (not resp == "empty"):
             break
+    # print(resp)
     threads = []
-    for train_no in resp:
-        code = train_no["station_train_code"]
+    for train in resp:
+        code = train["station_train_code"]
         if not code in no_list:
-            no = train_no["train_no"]
+            no = train["train_no"]
             lock_no_list.acquire()
             try:
                 no_list[code] = no
@@ -324,17 +324,21 @@ def get_all_target_info(key):
                 threads.append(thread)
     for thread in threads:
         thread.join()
-    print(str(key) + "finish" + "\n", end="")
 
 def get_all_info(head):
     threads = []
+    thread_num = 0
+    finished_thread_num = 0
     for num in range(1, 100):
         code = head + str(num)
         thread = threading.Thread(target=get_all_target_info, args=(code,))
         thread.start()
         threads.append(thread)
+        thread_num += 1
     for thread in threads:
         thread.join()
+        finished_thread_num += 1
+        print(finished_thread_num, "/", thread_num)
 
 def count_code():
     print("Train sum:\t", len(no_list), '\t(', len(train_list), ')')
@@ -502,7 +506,7 @@ while s != "exit":
             print("Not operate on the appointed date")
         else:
             callback = print_train(train_list[no_list[target]])
-        continue
+            continue
 
     # 按站点查
     if s[0:7].lower() == "station" or s[-1:] == "站" or s.find("+") > 1 and s[s.find("+")-1] == "站":
