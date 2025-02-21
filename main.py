@@ -309,6 +309,9 @@ def get_all_target_info(key):
             print(key + "refused" + str(cnt) + "\n" ,end="")
         if cnt == 10:
             print(key + "failed" + "\n" ,end="")
+            lock_task_callback.acquire()
+            task_callback["failed"] += 1
+            lock_task_callback.release()
             return
         resp = get_train_no(key)
         if (not resp == "error") and (not resp == "empty"):
