@@ -49,15 +49,21 @@ def time_interval(time_start, time_end):
         interval = 24 * 60 - start_total + end_total
     return interval
 
+
+def line_cut():
+    print("------------------------------------------------------------")
+
+
 def count_code():
     """用来统计车次数量的函数，无返回值"""
+    line_cut()
     print("Train sum:\t", len(no_list), '\t(', len(train_list), ')')
     cnt_code = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
     cnt_train = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
                  'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
-    check = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
-                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
+    check = {'G prefix': 4000, 'D prefix': 2100, 'C prefix': 2100, 'Z prefix': 180, 'T prefix': 140,
+                 'K prefix': 1200, 'S prefix': 700, 'Y prefix': 1, 'Pure number': 200, }
     for train in no_list:
         if train[0].isdigit():
             cnt_code['Pure number'] += 1
@@ -69,14 +75,18 @@ def count_code():
         else:
             cnt_train[train_list[train][0]["station_train_code"][0] + ' prefix'] += 1
     for prefix in cnt_code:
-        print(prefix + "\t", cnt_code[prefix], '\t(', cnt_train[prefix], ')')
-
+        if cnt_train[prefix] > check[prefix]:
+            print("    ", prefix + "\t", cnt_code[prefix], '\t(', cnt_train[prefix], ')')
+        else:
+            print("  ? ", prefix + "\t", cnt_code[prefix], '\t(', str(cnt_train[prefix]) , ')')
+    line_cut()
 
 def print_train(x):
     """这个函数用于输出一个车次的信息
     参数x为一个字典"""
     code = x[0]["station_train_code"]
     callback = {}
+    line_cut()
     print(code,end=' ')
     for i in x:
         if i["station_train_code"] != code:
@@ -107,12 +117,14 @@ def print_train(x):
             if i == j:
                 continue
             callback[i["station_no"] + "-" + j["station_no"]] = i["station_name"] + "-" + j["station_name"]
+    line_cut()
     return callback
 
 def search_station(x, t1='00:00', t2='24:00', sort_order = "", prefix = "GDCKTZSYP"):
     """这个函数用来查找车站的时刻表
     在sort_order中，如果包含up/dn，说明需要显示上/下行车次
     如果包含st/ed/ps，说明需要显示始发/终到/过路车次"""
+    line_cut()
     sort_order.lower()
     tail = []
     if "up" in sort_order:
@@ -144,6 +156,7 @@ def search_station(x, t1='00:00', t2='24:00', sort_order = "", prefix = "GDCKTZS
                 cnt += 1
     if cnt == 0:
         print("Unable to find station \"" + x + "\" please check input or load data first")
+        line_cut()
         return {}
     print(x, '\t', t1, '-', t2, "\t", cnt, "results")
     callback = {}
@@ -188,11 +201,13 @@ def search_station(x, t1='00:00', t2='24:00', sort_order = "", prefix = "GDCKTZS
     if "1" in tail:
         print("DN", end=' ')
     print(" ")
+    line_cut()
     return callback
 
 def search_link(st, ed, sort_order = "st", prefix = "GDCKTZSYP"):
     """起止站搜索，st，ed是两个列表，表示起止站，sort_order表示结果的排序方式，分为st，ed，v。
     prefix表示车次前缀的筛选范围"""
+    line_cut()
     callback = {}
     if len(set(st) & set(ed)) > 0:
         print("The set of starting and ending stations include same element")
@@ -280,6 +295,7 @@ def search_link(st, ed, sort_order = "st", prefix = "GDCKTZSYP"):
         else:
             print(j, end='   ')
     print(cnt, "results,", visible, "visible")
+    line_cut()
     return callback
 
 
