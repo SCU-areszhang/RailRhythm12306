@@ -29,7 +29,7 @@ Import G
 Import PZTK
 # 纯数字和Z、T、K字头
 Import A  
-#  一次导入G/D/C/K/T/Z/S/Y/纯数字
+# 一次导入G/D/C/K/T/Z/S/Y/纯数字
 ```
 Sample output #1
 ```aiignore
