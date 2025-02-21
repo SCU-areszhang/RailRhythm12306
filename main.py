@@ -345,6 +345,7 @@ def get_all_target_info(key):
     """这个函数控制get_train_no和get_train_info两个函数
     把目标字段的所有车次号查出train_no并且根据train_no加载时刻表数据"""
     cnt = 0
+    time.sleep(0.5)
     while True:
         cnt += 1
         if cnt == 5:
