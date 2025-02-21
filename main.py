@@ -331,7 +331,10 @@ def get_all_target_info(key):
     for thread in threads:
         thread.join()
 
-def get_all_info(head):
+def get_all_info(keys):
+    """这个函数负责开启各个车次号查询字段的多线程
+    得到的结果载入no_list和train_list
+    head是一个列表，包括需要查询的车次号字段"""
     threads = []
     thread_num = 0
     finished_thread_num = 0
