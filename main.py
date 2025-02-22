@@ -340,7 +340,7 @@ def get_train_info(x, date=auto_date):
         finally:
             lock_train_list.release()
 
-try_times = 5
+try_times = 2
 def get_all_target_info(key, mode):
     """这个函数控制get_train_no和get_train_info两个函数
     把目标字段的所有车次号查出train_no并且根据train_no加载时刻表数据"""
