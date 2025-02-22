@@ -405,7 +405,7 @@ def get_all_info(keys):
           str(task_callback["failed"]) + " failed")
     for thread in threads:
         thread.join()
-
+    return
 
 s = ""
 callback = {} # 跳转数据
