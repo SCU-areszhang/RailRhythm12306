@@ -1,5 +1,6 @@
 # Rail Rhythm 中国铁路时刻表查询工具
 # wj_0575 2025.1
+import copy
 import os.path
 import re
 import time
@@ -53,7 +54,6 @@ def time_interval(time_start, time_end):
 def line_cut():
     print("------------------------------------------------------------")
 
-
 def count_code():
     """用来统计车次数量的函数，无返回值"""
     line_cut()
@@ -62,8 +62,8 @@ def count_code():
                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
     cnt_train = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
                  'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
-    check = {'G prefix': 3800, 'D prefix': 2100, 'C prefix': 2000, 'Z prefix': 180, 'T prefix': 140,
-                 'K prefix': 1200, 'S prefix': 700, 'Y prefix': 1, 'Pure number': 200, }
+    check = {'G prefix': 3800, 'D prefix': 2000, 'C prefix': 2000, 'Z prefix': 180, 'T prefix': 100,
+                 'K prefix': 850, 'S prefix': 700, 'Y prefix': 1, 'Pure number': 200, }
     for train in no_list:
         if train[0].isdigit():
             cnt_code['Pure number'] += 1
@@ -100,7 +100,7 @@ def print_train(x):
               i["arrive_time"].ljust(7,' '),end='')
         if "is_start" in i:
             print(i["start_time"].ljust(5,' '),end='')
-        elif i["stop_time"] == 0:
+        elif i == x[-1]:
             print("----        ",end='')
         else:
             print(i["start_time"].ljust(5,' ')+str(i["stop_time"]).rjust(4,' ')+'\'',end='  ')
@@ -340,15 +340,16 @@ def get_train_info(x, date=auto_date):
         finally:
             lock_train_list.release()
 
-
-def get_all_target_info(key):
+try_times = 5
+def get_all_target_info(key, mode):
     """这个函数控制get_train_no和get_train_info两个函数
     把目标字段的所有车次号查出train_no并且根据train_no加载时刻表数据"""
     cnt = 0
-    time.sleep(0.5)
+    if mode == 0:
+        time.sleep(1)
     while True:
         cnt += 1
-        if cnt == 5:
+        if cnt == try_times:
             lock_task_callback.acquire()
             try:
                 task_callback["failed"] += 1
@@ -356,8 +357,21 @@ def get_all_target_info(key):
                 lock_task_callback.release()
             return
         resp = get_train_no(key)
-        if (not resp == "error") and (not resp == "empty"):
+        if resp == "empty":
+            task_callback["success"] += 1
+            return
+        if not resp == "error":
             break
+        if mode == 0:
+            time.sleep(1)
+    if mode == 2:
+        for train in resp:
+            code = train["station_train_code"]
+            if not code in no_list:
+                no = train["train_no"]
+                no_list[code] = no
+        task_callback["success"] += 1
+        return
     threads = []
     for train in resp:
         code = train["station_train_code"]
@@ -381,25 +395,49 @@ def get_all_target_info(key):
         lock_task_callback.release()
     return
 
-def get_all_info(keys):
+def get_all_info(keys, mode=0):
     """这个函数负责开启各个车次号查询字段的多线程
     得到的结果载入no_list和train_list
-    keys是一个列表，包括需要查询的车次号字段，并且经过了预处理"""
-    print("Starting threads...")
-    threads = []
+    keys是一个列表，包括需要查询的车次号字段，并且经过了预处理
+    mode==2表示不使用多线程，mode==1表示使用一级多线程，mode==0表示使用二级多线程，即默认模式"""
     for key in task_callback:
         task_callback[key] = 0
+    total = len(keys)
+    if mode != 0:
+        cnt = 0
+        failed = []
+        for key in keys:
+            cnt += 1
+            previous_failed = copy.deepcopy(task_callback)
+            get_all_target_info(key, mode=mode)
+            print(str(cnt).rjust(3, ' ') + " / " +
+                  str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
+                  str(task_callback["failed"]) + " failed", end="")
+            if task_callback["failed"] > 0:
+                print(":", end=" ")
+            if previous_failed["failed"] == task_callback["failed"]:
+                print("")
+            else:
+                failed.append(key)
+                if len(failed) <= 5:
+                    for fail in failed[::-1]:
+                        print(fail, end=" ")
+                    print("")
+                else:
+                    print(failed[-1], failed[-2], failed[-3], failed[-4], failed[-5], "...")
+        return
+    print("Starting threads...")
+    threads = []
     for key in keys:
-        thread = threading.Thread(target=get_all_target_info, args=(key,))
+        thread = threading.Thread(target=get_all_target_info, args=(key, mode))
         thread.start()
         threads.append(thread)
-    total = len(keys)
     while any(thread.is_alive() for thread in threads):
         active_thread_count = sum(thread.is_alive() for thread in threads)
         print(str(total - active_thread_count).rjust(3, ' ') + " / " +
               str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
               str(task_callback["failed"]) + " failed")
-        time.sleep(0.25)
+        time.sleep(1)
     print(str(total).rjust(3, ' ') + " / " +
           str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
           str(task_callback["failed"]) + " failed")
@@ -428,6 +466,11 @@ while s != "exit":
         s = callback[s]
     if s[0:6].lower() == "import": # 联网导入
         head = []
+        if s[-2:] == " 1" or s[-2:] == " 2":
+            mode = int(s[-1])
+            s = s[:-2]
+        else:
+            mode = 0
         type = s[7:].upper()
         if 'A' in type:
             type = "GDCZTKSYP"
@@ -442,7 +485,7 @@ while s != "exit":
                 else:
                     for num in range(1, 100):
                         head.append(prefix + str(num))
-        get_all_info(head)
+        get_all_info(head, mode=mode)
         count_code()
         continue
 
@@ -474,6 +517,7 @@ while s != "exit":
         with open('train_data/no_list' + auto_date_1 + '.json', 'w') as f2:
             json.dump(no_list, f2)
         print("Save over")
+        line_cut()
         continue
 
     # 载入数据
@@ -557,7 +601,7 @@ while s != "exit":
         r = pre.upper()
 
     # 车次查
-    if s[0:4].lower() == "code" or s[0] == '.':
+    if s[0:4].lower() == "code" or s[0] == '.' or s[0] == '。':
         if s[0:4].lower() == "code":
             target = s[5:].upper()
         else:
