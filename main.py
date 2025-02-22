@@ -62,7 +62,7 @@ def count_code():
                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
     cnt_train = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
                  'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
-    check = {'G prefix': 4000, 'D prefix': 2100, 'C prefix': 2100, 'Z prefix': 180, 'T prefix': 140,
+    check = {'G prefix': 3800, 'D prefix': 2100, 'C prefix': 2000, 'Z prefix': 180, 'T prefix': 140,
                  'K prefix': 1200, 'S prefix': 700, 'Y prefix': 1, 'Pure number': 200, }
     for train in no_list:
         if train[0].isdigit():
