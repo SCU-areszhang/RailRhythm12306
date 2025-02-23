@@ -427,11 +427,9 @@ def get_all_info(keys, mode=0):
     total = len(keys)
     if mode != 0:
         # 单线程
-        cnt = 0
-        for key in keys:
-            cnt += 1
+        for cnt, key in enumerate(keys):
             get_all_target_info(key, mode=mode)
-            print_threads_data(finished=cnt, total=total, mode=mode)
+            print_threads_data(finished=cnt+1, total=total, mode=mode)
         return
     else:
         # 分线程
