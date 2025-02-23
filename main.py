@@ -1,6 +1,5 @@
 # Rail Rhythm 中国铁路时刻表查询工具
 # wj_0575 2025.1
-import copy
 import os.path
 import re
 import time
