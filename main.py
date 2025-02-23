@@ -442,9 +442,6 @@ def get_all_info(keys, mode=0):
             active_thread_count = sum(thread.is_alive() for thread in threads)
             print_threads_data(finished=total - active_thread_count, total=total, mode=mode)
             time.sleep(1)
-        print(str(total).rjust(3, ' ') + " / " +
-              str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
-              str(task_callback["failed"]) + " failed")
         print_threads_data(finished=total, total=total, mode=mode)
         for thread in threads:
             thread.join()
