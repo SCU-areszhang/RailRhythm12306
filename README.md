@@ -4,6 +4,8 @@
 
 作为一名编程新手的项目，其内容正在不断充实之中，欢迎提出Issue，同时也非常期待您的Star。
 
+这篇文档比较详细，快速上手建议阅读[简明指南](Simple%20user%20file.md)。
+
 [联网导入](#1-联网导入)  [数据管理](#2-数据管理)  
 [按车次查询](#3-按车次查询)  [按站点查询](#4-按站点查询)   [按起止站查询](#5-按起止站查询)  
 [跳转和回溯](#6-跳转和回溯) [补充说明](#7-补充说明)
@@ -15,14 +17,12 @@
 自动接入12306，以列车字头为单元爬取时刻表。默认读取查询当天的车次，如果要更改查询日期，请参照第2节。
 命令格式为`Import`加车次头。纯数字用`P`代替。可以多个车次头连续，如`Import GDC`
 
-自2025年2月21日更新之后，联网导入采用了多线程操作，请留意请求被拒绝的次数和导入之后的车次总量情况。
+自2025年2月21日更新之后，联网导入采用了多线程操作，请留意请求被拒绝的次数和导入之后的车次总量情况。你也可以在原有命令之后加上一个数字`1`或`2`指定模式，如`Import A 1`，`Import GDC 2`，用降低请求速度的方式降低反爬可能性。
 
 联网导入时，开启网络代理服务可能会导致异常的中断。
 
 Sample input #1
 ```aiignore
-Import G   
-# G字头
 Import PZTK
 # 纯数字和Z、T、K字头
 Import A  
@@ -30,28 +30,53 @@ Import A
 ```
 Sample output #1
 ```aiignore
-1% 0 piece of data getted
-2% 200 piece of data getted
+Starting threads...
+  0 / 531   0 success, 0 failed
+ 41 / 531   41 success, 0 failed
+ 88 / 531   88 success, 0 failed
 ...
-99% 5621 piece of data getted
-G prefix train code information downloaded
-4341 train numbers in total
-# 本次导入了5621条数据，目前数据库里的车次总数是4354（不重复计算车次变更）
+527 / 531   527 success, 0 failed
+531 / 531   531 success, 0 failed
+------------------------------------------------------------
+Train sum:	 15154 	( 10484 )
+    G prefix	 5523 	( 3943 )
+    D prefix	 3394 	( 2229 )
+    C prefix	 3034 	( 2431 )
+    Z prefix	 311 	( 201 )
+    T prefix	 213 	( 150 )
+    K prefix	 1941 	( 1305 )
+    S prefix	 807 	( 783 )
+    Y prefix	 14 	( 5 )
+    Pure number	 329 	( 262 )
+# 导入后共有15154条车次信息，去除车次切换后是10484条
 ```
 这是正常导入。
 
-下面则是被12306反爬的情况。遇到这种情况，说明此次爬取结果无效，建议不要保存。12306 的反爬机制难以捉摸，有时仅仅爬取十几条 Y 字头车次的数据就会触发反爬，而有时连续爬取数千条 G、D、C 字头车次的数据却能顺利完成。
+下面则是被12306反爬的情况，数据总览中带有 ? 的行表示导入出现了错误（按照数量简单判断）。可能还会伴随着一些请求超时的控制台报错。遇到这种情况，说明此次爬取结果无效，建议不要保存。12306的反爬机制难以捉摸，有时仅仅爬取十几条 Y 字头车次的数据就会触发反爬，而有时连续爬取数千条 G、D、C 字头车次的数据却能顺利完成。
 
 Sample output #2
 ```aiignore
-1% 0 piece of data getted
-request error when getting related trains of D1
+Input instruction: import a
+  0 / 531   0 success, 0 failed
+ 61 / 531   61 success, 0 failed
+ 75 / 531   75 success, 0 failed
+ 83 / 531   83 success, 0 failed
 ...
-99% 0 piece of data getted
-request error when getting related trains of D99
-D prefix train code information downloaded
-11 train numbers in total  
-# 11条数据是之前保存的，这次导入了0条
+211 / 531   209 success, 2 failed: C98 G76 
+248 / 531   242 success, 6 failed: T2 Z8 K12 Z7 C98 ...
+267 / 531   243 success, 24 failed: C48 S89 G17 S52 D67 ...
+...
+------------------------------------------------------------
+Train sum:	 9280 	( 6568 )
+ ?  G prefix	 2460 	( 1801 )
+ ?  D prefix	 2254 	( 1575 )
+ ?  C prefix	 2752 	( 1834 )
+ ?  Z prefix	 165 	( 99 )
+ ?  T prefix	 39 	( 27 )
+ ?  K prefix	 740 	( 435 )
+ ?  S prefix	 691 	( 655 )
+    Y prefix	 10 	( 4 )
+ ?  Pure number	 169 	( 138 )
 ```
 
 如果一直被反爬，可以考虑更改请求中的`User-Agent`设置。

@@ -22,7 +22,7 @@ lock_train_list = threading.Lock()
 no_list = {} # reference from train code to train_no
 lock_no_list = threading.Lock()
 
-task_callback = {"success": 0, "failed": 0}
+task_callback = {"success": 0, "failed": 0, "data":[]}
 lock_task_callback = threading.Lock() # 记录多线程爬取的状态
 
 headers = {
@@ -50,7 +50,6 @@ def time_interval(time_start, time_end):
         interval = 24 * 60 - start_total + end_total
     return interval
 
-
 def line_cut():
     print("------------------------------------------------------------")
 
@@ -62,8 +61,8 @@ def count_code():
                 'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
     cnt_train = {'G prefix': 0, 'D prefix': 0, 'C prefix': 0, 'Z prefix': 0, 'T prefix': 0,
                  'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
-    check = {'G prefix': 3800, 'D prefix': 2000, 'C prefix': 2000, 'Z prefix': 180, 'T prefix': 100,
-                 'K prefix': 850, 'S prefix': 700, 'Y prefix': 1, 'Pure number': 200, }
+    check = {'G prefix': 3600, 'D prefix': 2000, 'C prefix': 2000, 'Z prefix': 160, 'T prefix': 100,
+                 'K prefix': 800, 'S prefix': 700, 'Y prefix': 1, 'Pure number': 200, }
     for train in no_list:
         if train[0].isdigit():
             cnt_code['Pure number'] += 1
@@ -340,7 +339,7 @@ def get_train_info(x, date=auto_date):
         finally:
             lock_train_list.release()
 
-try_times = 2
+try_times = 5
 def get_all_target_info(key, mode):
     """这个函数控制get_train_no和get_train_info两个函数
     把目标字段的所有车次号查出train_no并且根据train_no加载时刻表数据"""
@@ -353,6 +352,7 @@ def get_all_target_info(key, mode):
             lock_task_callback.acquire()
             try:
                 task_callback["failed"] += 1
+                task_callback["data"].append(key)
             finally:
                 lock_task_callback.release()
             return
@@ -395,55 +395,64 @@ def get_all_target_info(key, mode):
         lock_task_callback.release()
     return
 
+def print_threads_data(finished, total, mode=0):
+    """把输出导入状态的函数放到一起，这样代码简洁多了"""
+    print(str(finished).rjust(3, ' ') + " / " +
+          str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
+          str(task_callback["failed"]) + " failed", end='')
+    if task_callback["failed"] > 0:
+        print(":", end=" ")
+        if mode == 0:
+            lock_task_callback.acquire()
+        if len(task_callback["data"]) <= 5:
+            for fail in task_callback["data"][::-1]:
+                print(fail, end=" ")
+            print("")
+        else:
+            print(task_callback["data"][-1], task_callback["data"][-2], task_callback["data"][-3],
+                  task_callback["data"][-4], task_callback["data"][-5], "...")
+        if mode == 0:
+            lock_task_callback.release()
+    else:
+        print("")
+
 def get_all_info(keys, mode=0):
     """这个函数负责开启各个车次号查询字段的多线程
     得到的结果载入no_list和train_list
     keys是一个列表，包括需要查询的车次号字段，并且经过了预处理
     mode==2表示不使用多线程，mode==1表示使用一级多线程，mode==0表示使用二级多线程，即默认模式"""
-    for key in task_callback:
-        task_callback[key] = 0
+    task_callback["success"] = 0
+    task_callback["failed"] = 0
+    task_callback["data"] = []
     total = len(keys)
     if mode != 0:
+        # 单线程
         cnt = 0
-        failed = []
         for key in keys:
             cnt += 1
-            previous_failed = copy.deepcopy(task_callback)
             get_all_target_info(key, mode=mode)
-            print(str(cnt).rjust(3, ' ') + " / " +
-                  str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
-                  str(task_callback["failed"]) + " failed", end="")
-            if task_callback["failed"] > 0:
-                print(":", end=" ")
-            if previous_failed["failed"] == task_callback["failed"]:
-                print("")
-            else:
-                failed.append(key)
-                if len(failed) <= 5:
-                    for fail in failed[::-1]:
-                        print(fail, end=" ")
-                    print("")
-                else:
-                    print(failed[-1], failed[-2], failed[-3], failed[-4], failed[-5], "...")
+            print_threads_data(finished=cnt, total=total, mode=mode)
         return
-    print("Starting threads...")
-    threads = []
-    for key in keys:
-        thread = threading.Thread(target=get_all_target_info, args=(key, mode))
-        thread.start()
-        threads.append(thread)
-    while any(thread.is_alive() for thread in threads):
-        active_thread_count = sum(thread.is_alive() for thread in threads)
-        print(str(total - active_thread_count).rjust(3, ' ') + " / " +
+    else:
+        # 分线程
+        threads = []
+        for key in keys:
+            thread = threading.Thread(target=get_all_target_info, args=(key, mode))
+            thread.start()
+            threads.append(thread)
+        while any(thread.is_alive() for thread in threads):
+            active_thread_count = sum(thread.is_alive() for thread in threads)
+            print_threads_data(finished=total - active_thread_count, total=total, mode=mode)
+            time.sleep(1)
+        print(str(total).rjust(3, ' ') + " / " +
               str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
               str(task_callback["failed"]) + " failed")
-        time.sleep(1)
-    print(str(total).rjust(3, ' ') + " / " +
-          str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
-          str(task_callback["failed"]) + " failed")
-    for thread in threads:
-        thread.join()
-    return
+        print_threads_data(finished=total, total=total, mode=mode)
+        for thread in threads:
+            thread.join()
+        return
+
+
 
 s = ""
 callback = {} # 跳转数据
