@@ -4,7 +4,7 @@
 
 ### 获取Rail Rhythm
 
-克隆或下载仓库，在python开发环境中运行或直接运行RailRhythm.exe
+克隆或下载仓库，在python开发环境中运行或直接运行main.py
 
 ### 设置日期
 
