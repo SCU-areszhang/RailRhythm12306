@@ -462,8 +462,8 @@ trace_max = 0
 city_station = {} # 同城车站数据
 
 print("Welcome to the Rail Rhythm railway timetable query tool")
-if os.path.exists('city_station.json'):
-    with open('city_station.json', 'r') as f1:
+if os.path.exists('global_data/city_station.json'):
+    with open('global_data/city_station.json', 'r') as f1:
         city_station = json.load(f1)
 print("Current date setting:", auto_date)
 while s != "exit":
@@ -569,7 +569,7 @@ while s != "exit":
                 city_station[new] = tmp
                 if tmp == "tmp":
                     city_station.pop(new)
-        with open('city_station.json', 'w') as f1:
+        with open('global_data/city_station.json', 'w') as f1:
             json.dump(city_station, f1)
         print("City stations data save over")
         continue
