@@ -322,7 +322,8 @@ Sample output #3
 添加了同城车站便捷查询功能
 * 2025/2/21  
 实现了多线程导入，大幅提升爬取的速度和成功率
-
+* 2025/2/26  
+开始搭建交互窗口
 ---
 
 ###### _**Love the rhythm of rails, love the veins of the world.**_
