@@ -12,7 +12,9 @@ import json
 import threading
 
 from datetime import datetime
-
+color_red = "#FFCBCB"
+color_blue = "#B9E0FF"
+color_green = "#BBF2B4"
 current_date = datetime.now()
 auto_date = current_date.strftime("%Y-%m-%d")
 auto_date_1 = auto_date.replace("-","")
@@ -66,6 +68,13 @@ def count_code():
                  'K prefix': 0, 'S prefix': 0, 'Y prefix': 0, 'Pure number': 0, }
     check = {'G prefix': 3600, 'D prefix': 2000, 'C prefix': 2000, 'Z prefix': 160, 'T prefix': 100,
                  'K prefix': 800, 'S prefix': 700, 'Y prefix': 1, 'Pure number': 200, }
+    name = {'G prefix': "G字头 高速", 'D prefix': "D字头 动车", 'C prefix': "C字头 城际", 'Z prefix': "Z字头 直特",
+            'T prefix': "T字头 特快", 'K prefix': "K字头 快速", 'S prefix': "S字头 市域", 'Y prefix': "Y字头 旅游",
+            'Pure number': "纯数字 普客", }
+    pack = {"names": ["类别", "车次计数", "开行计数", "参考说明"],
+            "widths": [15, 10, 10, 10],
+            "data": [],
+            "head": auto_date.replace("-", "/") + "的数据加载完成"}
     for train in no_list:
         if train[0].isdigit():
             cnt_code['Pure number'] += 1
@@ -77,10 +86,13 @@ def count_code():
         else:
             cnt_train[train_list[train][0]["station_train_code"][0] + ' prefix'] += 1
     for prefix in cnt_code:
+        insert = [name[prefix], cnt_code[prefix], cnt_train[prefix], ""]
         if cnt_train[prefix] > check[prefix]:
-            print("   ", prefix + "\t", cnt_code[prefix], '\t(', cnt_train[prefix], ')')
+            insert[3] = "√"
         else:
-            print(" ? ", prefix + "\t", cnt_code[prefix], '\t(', str(cnt_train[prefix]) , ')')
+            insert[3] = "?"
+        pack["data"].append(insert)
+    return pack
     line_cut()
 
 def print_train(x, ask = False):
@@ -309,6 +321,7 @@ def get_all_target_info(key, mode):
     """这个函数控制get_train_no和get_train_info两个函数
     把目标字段的所有车次号查出train_no并且根据train_no加载时刻表数据"""
     cnt = 0
+    print(key)
     if mode == 0:
         time.sleep(1)
     while True:
@@ -362,24 +375,10 @@ def get_all_target_info(key, mode):
 
 def print_threads_data(finished, total, mode=0):
     """把输出导入状态的函数放到一起，这样代码简洁多了"""
-    print(str(finished).rjust(3, ' ') + " / " +
+    create_head(str(finished).rjust(3, ' ') + " / " +
           str(total).ljust(6, ' ') + str(task_callback["success"]) + " success, " +
-          str(task_callback["failed"]) + " failed", end='')
-    if task_callback["failed"] > 0:
-        print(":", end=" ")
-        if mode == 0:
-            lock_task_callback.acquire()
-        if len(task_callback["data"]) <= 5:
-            for fail in task_callback["data"][::-1]:
-                print(fail, end=" ")
-            print("")
-        else:
-            print(task_callback["data"][-1], task_callback["data"][-2], task_callback["data"][-3],
-                  task_callback["data"][-4], task_callback["data"][-5], "...")
-        if mode == 0:
-            lock_task_callback.release()
-    else:
-        print("")
+          str(task_callback["failed"]) + " failed")
+    return
 
 def get_all_info(keys, mode=0):
     """这个函数负责开启各个车次号查询字段的多线程
@@ -421,14 +420,8 @@ trace_code = 0
 trace_max = 0
 city_station = {}
 
-if (os.path.exists('train_data/train_list' + auto_date_1 + '.json') and
-        os.path.exists('train_data/no_list' + auto_date_1 + '.json')):
-    with open('train_data/train_list' + auto_date_1 + '.json', 'r') as f1:
-        train_list = json.load(f1)
-    with open('train_data/no_list' + auto_date_1 + '.json', 'r') as f2:
-        no_list = json.load(f2)
-    print("Load over")
-    count_code()
+
+
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -464,19 +457,57 @@ def date_change():
         auto_date_1 = auto_date.replace("-", "")
         create_head("日期已经调整为" + auto_date.replace("-", "/"))
     else:
-        create_head("日期格式不正确")
+        create_head("日期格式不正确或无效")
+def load():
+    if (os.path.exists('train_data/train_list' + auto_date_1 + '.json') and
+            os.path.exists('train_data/no_list' + auto_date_1 + '.json')):
+        global train_list
+        global no_list
+        with open('train_data/train_list' + auto_date_1 + '.json', 'r') as f1:
+            train_list = json.load(f1)
+        with open('train_data/no_list' + auto_date_1 + '.json', 'r') as f2:
+            no_list = json.load(f2)
+        callback = count_code()
+        create_table(root, data=callback)
+    else:
+        create_head("文件不存在")
+def save():
+    for i in train_list:
+        train_list[i][0]["start_station_name"] = train_list[i][0]["start_station_name"].replace(" ", "")
+        train_list[i][0]["end_station_name"] = train_list[i][0]["end_station_name"].replace(" ", "")
+        for j in train_list[i]:
+            j["station_name"] = j["station_name"].replace(" ", "")
+    with open('train_data/train_list' + auto_date_1 + '.json', 'w') as f1:
+        json.dump(train_list, f1)
+    with open('train_data/no_list' + auto_date_1 + '.json', 'w') as f2:
+        json.dump(no_list, f2)
+    create_head(auto_date.replace("-", "/") + " 的数据保存完成")
+
 
 control_date_confirm_button = tk.Button(control_frame, text="确定", command=date_change)
 control_date_confirm_button.place(relx=0.84, rely=0.4, relwidth=0.22, relheight=0.26, anchor="center")
 # 加载按钮
-control_load_button = tk.Button(control_frame, text="Load")
+control_load_button = tk.Button(control_frame, text="加载", command=load)
 control_load_button.place(relx=0.19, rely=0.75, relwidth=0.28, relheight=0.26, anchor="center")
 # 保存按钮
-control_save_button = tk.Button(control_frame, text="save")
+control_save_button = tk.Button(control_frame, text="保存", command=save)
 control_save_button.place(relx=0.5, rely=0.75, relwidth=0.28, relheight=0.26, anchor="center")
+def import_mode0():
+    keys = []
+    for prefix in ['G']:
+        if prefix in ['Z', 'T', 'Y']:
+            for num in range(1, 10):
+                keys.append(prefix + str(num))
+        elif prefix == 'P':
+            for num in range(1, 10):
+                keys.append(str(num))
+        else:
+            for num in range(1, 100):
+                keys.append(prefix + str(num))
+    get_all_info(keys=keys, mode=0)
 # 导入按钮
-control_save_button = tk.Button(control_frame, text="import")
-control_save_button.place(relx=0.81, rely=0.75, relwidth=0.28, relheight=0.26, anchor="center")
+control_import_button = tk.Button(control_frame, text="import", command=import_mode0)
+control_import_button.place(relx=0.81, rely=0.75, relwidth=0.28, relheight=0.26, anchor="center")
 
 # 左中查询操作区
 search_frame = tk.Frame(root, bg=color_white)
@@ -539,13 +570,13 @@ def toggle_search_station_train_type_button(index):
     # 切换对应索引按钮的状态
     search_station_train_type_buttons_state[index] = not search_station_train_type_buttons_state[index]
     if search_station_train_type_buttons_state[index]:
-        search_station_train_type_button[index].config(bg="green", text=search_station_train_type_name[index])
+        search_station_train_type_button[index].config(bg=color_green, text=search_station_train_type_name[index])
     else:
-        search_station_train_type_button[index].config(bg="red", text=search_station_train_type_name[index])
+        search_station_train_type_button[index].config(bg=color_red, text=search_station_train_type_name[index])
 # 循环创建按钮
 for index, train_type in enumerate(search_station_train_type):
     all_select_button = tk.Button(search_frame, text=search_station_train_type_name[index],
-                                  bg="green" if search_station_train_type_buttons_state[index] else "red",
+                                  bg=color_green if search_station_train_type_buttons_state[index] else color_red,
                                   command=lambda idx=index: toggle_search_station_train_type_button(idx))
     all_select_button.place(relx=0.31 + index * 0.145, rely=0.55, relwidth=0.12, relheight=0.13, anchor="center")
     search_station_train_type_button.append(all_select_button)
@@ -571,40 +602,67 @@ def toggle_mode():
     search_link_sort_mode = (search_link_sort_mode + 1) % 3
     current_mode = modes[search_link_sort_mode]
     if current_mode == "出发时间":
-        search_link_sort_order.config(bg="red", text=current_mode)
+        search_link_sort_order.config(bg=color_red, text=current_mode)
     elif current_mode == "到达时间":
-        search_link_sort_order.config(bg="green", text=current_mode)
+        search_link_sort_order.config(bg=color_green, text=current_mode)
     else:
-        search_link_sort_order.config(bg="blue", text=current_mode)
-search_link_sort_order = tk.Button(search_frame, text=modes[search_link_sort_mode], bg="red", command=toggle_mode)
+        search_link_sort_order.config(bg=color_blue, text=current_mode)
+search_link_sort_order = tk.Button(search_frame, text=modes[search_link_sort_mode], bg=color_red, command=toggle_mode)
 search_link_sort_order.place(relx=0.36, rely=0.88, relwidth=0.22, relheight=0.13, anchor="center")
 # 是否模糊站名
 search_link_fuzzy_button_state = False  # 初始状态为未选中
 def search_link_fuzzy_button():
     global search_link_fuzzy_button_state
     if search_link_fuzzy_button_state:
-        search_link_fuzzy_button.config(bg="red", text="精准站名")
+        search_link_fuzzy_button.config(bg=color_red, text="精准站名")
         search_link_fuzzy_button_state = False
     else:
-        search_link_fuzzy_button.config(bg="green", text="模糊站名")
+        search_link_fuzzy_button.config(bg=color_green, text="模糊站名")
         search_link_fuzzy_button_state = True
-search_link_fuzzy_button = tk.Button(search_frame, text="精准站名", bg="red", command=search_link_fuzzy_button)
+search_link_fuzzy_button = tk.Button(search_frame, text="精准站名", bg=color_red, command=search_link_fuzzy_button)
 search_link_fuzzy_button.place(relx=0.6, rely=0.88, relwidth=0.22, relheight=0.13, anchor="center")
 def get_search_link():
-    if search_link_fuzzy_button_state:
-        link_char = "--"
-    else:
-        link_char = "-"
+    link_st = search_link_st.get()
+    link_ed = search_link_ed.get()
+    prefix = get_prefix_selected_buttons()
     if search_link_sort_mode == 0:
         sort_mode = "+st"
     elif search_link_sort_mode == 1:
         sort_mode = "+ed"
     else:
         sort_mode = "+v"
-    search(search_link_st.get() + link_char + search_link_ed.get() + get_prefix_selected_buttons())
-    st = [search_link_st.get()]
-    ed = [search_link_ed.get()]
-    pack = print_link(st, ed, sort_order=sort_mode, prefix=get_prefix_selected_buttons())
+    if search_link_fuzzy_button_state:
+        link_char = "--"
+        st = []
+        ed = []
+        for city_name in city_station:
+            for station in city_station[city_name]:
+                if station == link_st:
+                    st = city_station[city_name]
+        if not st:
+            st = [link_st]
+        for city_name in city_station:
+            for station in city_station[city_name]:
+                if station == link_ed:
+                    ed = city_station[city_name]
+        if not ed:
+            ed = [link_ed]
+    else:
+        link_char = "-"
+        st = [link_st]
+        ed = [link_ed]
+    print(st, ed)
+    search(link_st + link_char + link_ed + prefix)
+    pack = print_link(st, ed, sort_order=sort_mode, prefix=prefix)
+    if not pack["data"]:
+        st_station = print_station(st[0], sort_order="stedupdnps", prefix="GDCZTKSYP")
+        if not st_station:
+            create_head("找不到“" + link_st + "”站")
+            return
+        ed_station = print_station(ed[0], sort_order="stedupdnps", prefix="GDCZTKSYP")
+        if not ed_station:
+            create_head("找不到“" + link_ed + "”站")
+            return
     create_head(pack["head"])
     create_table(root, data=pack)
 # 查询按钮
@@ -624,12 +682,12 @@ prefix_control_button = []
 def toggle_button_state(index):
     prefix_control_button_states[index] = not prefix_control_button_states[index]
     if prefix_control_button_states[index]:
-        prefix_control_button[index].config(bg="green")
+        prefix_control_button[index].config(bg=color_green)
     else:
-        prefix_control_button[index].config(bg="red")
+        prefix_control_button[index].config(bg=color_red)
 # 循环创建按钮
 for i, text in enumerate(button_texts):
-    button = tk.Button(prefix_control, text=text, bg="green", command=lambda idx=i: toggle_button_state(idx))
+    button = tk.Button(prefix_control, text=text, bg=color_green, command=lambda idx=i: toggle_button_state(idx))
     button.place(relx=0.11+i*0.1, rely=0.5, relwidth=0.08, relheight=0.6, anchor="center")
     prefix_control_button.append(button)
 def get_prefix_selected_buttons():
@@ -721,5 +779,8 @@ def create_table(root, data):
     def _on_mousewheel(event):
         canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
     canvas.bind_all("<MouseWheel>", _on_mousewheel)
-
+if os.path.exists('global_data/city_station.json'):
+    with open('global_data/city_station.json', 'r') as f1:
+        city_station = json.load(f1)
+create_head("当前时间" + auto_date.replace("-", '/'))
 root.mainloop()
