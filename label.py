@@ -493,8 +493,9 @@ control_load_button.place(relx=0.19, rely=0.75, relwidth=0.28, relheight=0.26, a
 control_save_button = tk.Button(control_frame, text="保存", command=save)
 control_save_button.place(relx=0.5, rely=0.75, relwidth=0.28, relheight=0.26, anchor="center")
 def import_mode0():
+    create_head("正在全速导入 请等待")
     keys = []
-    for prefix in ['G']:
+    for prefix in "GDCZTKSYP":
         if prefix in ['Z', 'T', 'Y']:
             for num in range(1, 10):
                 keys.append(prefix + str(num))
@@ -505,6 +506,10 @@ def import_mode0():
             for num in range(1, 100):
                 keys.append(prefix + str(num))
     get_all_info(keys=keys, mode=0)
+    callback = count_code()
+    create_table(root, data=callback)
+    create_head("导入完成 请检查")
+
 # 导入按钮
 control_import_button = tk.Button(control_frame, text="import", command=import_mode0)
 control_import_button.place(relx=0.81, rely=0.75, relwidth=0.28, relheight=0.26, anchor="center")
