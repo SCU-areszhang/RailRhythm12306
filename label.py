@@ -526,7 +526,7 @@ search_code_entry = tk.Entry(search_frame)
 search_code_entry.place(relx=0.47, rely=0.2, relwidth=0.44, relheight=0.13, anchor="center")
 # 查车次返回文本函数
 def get_search_code():
-    s = search_code_entry.get()
+    s = search_code_entry.get().upper()
     search("." + search_code_entry.get())
     if not s in no_list:
         create_head(s + " 不存在")

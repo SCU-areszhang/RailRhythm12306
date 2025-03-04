@@ -447,29 +447,36 @@ def get_all_info(keys, mode=0):
         return
 
 
-def rank_station(num=200):
+def rank_station(num=200, key="动分动集普速", prefix="GDCZTKSYP"):
     rank = {}
     detail = {}
     for i in train_list:
         # print(train_list[i])
-        if train_list[i][0]["station_train_code"][0] == 'S':
-            continue
         for j in train_list[i]:
             if j["station_name"] not in rank:
-                rank[j["station_name"]] = 1
-                detail[j["station_name"]] = [0, 0, 0]
-            else:
-                rank[j["station_name"]] += 1
+                rank[j["station_name"]] = 0
+                detail[j["station_name"]] = []
             if j["station_train_code"][0] == 'G' or j["station_train_code"][0] == 'D' and int(j["station_train_code"][1:]) > 300 or j["station_train_code"][0] == 'C' and int(j["station_train_code"][1:]) > 1000:
-                train_type = 0
+                train_type = "动分"
             elif j["station_train_code"][0] in "ZTKY0123456789":
-                train_type = 1
+                train_type = "普速"
+            elif j["station_train_code"][0] == 'S':
+                train_type = "市域"
             else:
-                train_type = 2
-            detail[j["station_name"]][train_type] += 1
+                train_type = "动集"
+            if j["station_train_code"][0].isdigit():
+                train_prefix = "P"
+            else:
+                train_prefix = j["station_train_code"][0]
+            if train_type in key and train_prefix in prefix:
+                rank[j["station_name"]] += 1
+                detail[j["station_name"]].append(j["station_train_code"])
     rank = sorted(rank.items(), key=lambda item: item[1], reverse=True)[:num]
     for rank, (station, train_num) in enumerate(rank):
-        print(rank + 1, "\t", station, "\t共计", train_num, "\t动分", detail[station][0], "\t动集", detail[station][2], "\t普速", detail[station][1])
+        print(str(rank + 1).rjust(4, ' '), station.ljust(5, ' '), "\t共计 ", train_num, end='  ')
+        for train_code in detail[station]:
+            print(train_code, end=' ')
+        print("")
 
 s = ""
 callback = {} # 跳转数据
@@ -601,8 +608,13 @@ while s != "exit":
     if s.lower() == "sum":
         count_code()
         continue
-    if s.lower() == "rank_station":
-        rank_station()
+    if "rank_station" in s.lower():
+        key_and_prefix = s[13:]
+        if '*' in key_and_prefix:
+            key, prefix = key_and_prefix.split('*')
+            rank_station(num=100, key=key, prefix=prefix)
+        else:
+            rank_station(num=100, key=s[13:])
         continue
 
     # 回溯
