@@ -12,8 +12,8 @@ import threading
 color_blank = {
     '1':(100, 100, 100),'2':(100, 100, 100),'3':(100, 100, 100),'4':(100, 100, 100),'5':(100, 100, 100),
     '6':(100, 100, 100),'7':(100, 100, 100),'8':(100, 100, 100),'9':(100, 100, 100),'0':(100, 100, 100),
-    'G':(220, 20, 20),'D':(80, 20, 0),'C':(255, 90, 0),'Z':(50, 220, 50), 'T':(30, 120, 255),
-    'K':(0, 50, 100),'S':(130, 130, 60), 'Y':(100, 0, 255)
+    'G':(220, 20, 20),'D':(80, 20, 0),'C':(255, 90, 0),'Z':(50, 140, 0), 'T':(30, 120, 255),
+    'K':(0, 50, 100),'S':(130, 130, 60), 'Y':(200, 20, 255)
 }
 
 background_image_path = 'D:\youyong\Github repository\RailRhythm12306\pictures\source/background.png'
@@ -96,7 +96,7 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
             b_y = 50
             font_size = 35
             line = 20
-        elif len(detail[station]) > 200:
+        elif len(detail[station]) > 230:
             b_x = 160
             b_y = 65
             font_size = 45
@@ -698,9 +698,9 @@ while s != "exit":
         key_and_prefix = s[13:]
         if '*' in key_and_prefix:
             key, prefix = key_and_prefix.split('*')
-            rank_station(num=300, key=key, prefix=prefix)
+            rank_station(num=330, key=key, prefix=prefix)
         else:
-            rank_station(num=300, key=s[13:])
+            rank_station(num=330, key=s[13:])
         continue
 
     # 回溯
