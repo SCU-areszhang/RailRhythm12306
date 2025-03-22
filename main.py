@@ -363,14 +363,6 @@ def get_all_target_info(key, mode):
             break
         if mode == 0:
             time.sleep(1)
-    if mode == 2:
-        for train in resp:
-            code = train["station_train_code"]
-            if not code in no_list:
-                no = train["train_no"]
-                no_list[code] = no
-        task_callback["success"] += 1
-        return
     threads = []
     for train in resp:
         code = train["station_train_code"]
