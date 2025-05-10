@@ -16,12 +16,17 @@ color_blank = {
     'K':(0, 50, 100),'S':(130, 130, 60), 'Y':(200, 20, 255)
 }
 
-background_image_path = 'D:\youyong\Github repository\RailRhythm12306\pictures\source/background.png'
+# 修改前（错误示例）:
+# background_image_path = 'D:\youyong\Github repository\RailRhythm12306\pictures\source/background.png'
+# font_path_bd = 'C:\Windows\Fonts\msyhbd.ttc'
+
+# 修改后:
+background_image_path = r'D:\youyong\Github repository\RailRhythm12306\pictures\source\background.png'
+font_path_bd = r'C:\Windows\Fonts\msyhbd.ttc'
+fond_path = r'C:\Windows\Fonts\msyh.ttc'
+
 background_image = Image.open(background_image_path)
 width, height = background_image.size
-
-font_path_bd = 'C:\Windows\Fonts\msyhbd.ttc'
-fond_path = 'C:\Windows\Fonts\msyh.ttc'
 
 def draw_text(object, text="", position_x=0, position_y=0, color=(0, 0, 0), font_size=128, bd=False):
     if bd:
@@ -42,7 +47,10 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                 rank[j["station_name"]] = 0
                 station_type[j["station_name"]] = {"动分": 0, "动集": 0, "普速": 0, "市域": 0}
                 detail[j["station_name"]] = []
-            if j["station_train_code"][0] == 'G' or j["station_train_code"][0] == 'D' and int(j["station_train_code"][1:]) > 300 or j["station_train_code"][0] == 'C' and int(j["station_train_code"][1:]) > 1000:
+            if (j["station_train_code"][0] == 'G' or
+                j["station_train_code"][0] == 'D' and int(j["station_train_code"][1:]) > 300 or
+                j["station_train_code"][0] == 'C' and 1000 < int(j["station_train_code"][1:]) < 4000 or
+                j["station_train_code"][0] == 'C' and int(j["station_train_code"][1:]) > 5000):
                 train_type = "动分"
             elif j["station_train_code"][0] in "ZTKY0123456789":
                 train_type = "普速"
@@ -61,12 +69,15 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
     rank = sorted(rank.items(), key=lambda item: item[1], reverse=True)[:num]
     previous_rank = 0
     previous_num = 0
+
     for r, (station, train_num) in enumerate(rank):
+
         if train_num != previous_num:
             previous_rank = r
             previous_num = train_num
         new_image = background_image.copy()
         draw = ImageDraw.Draw(new_image)
+        # 透明度
         draw_text(object=draw, text=str(previous_rank + 1) + ' ' + station, position_x=250, position_y=160,
                   font_size=200, bd=True)
         draw_text(object=draw, text="车次总数", position_x=250, position_y=560,
@@ -78,9 +89,13 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
         draw_text(object=draw, text="动集 " + str(station_type[station]["动集"]), position_x=250, position_y=1200,
                   font_size=90, bd=True, color=(80, 0, 160))
         draw_text(object=draw, text="普速 " + str(station_type[station]["普速"]), position_x=250, position_y=1350,
-                  font_size=90, bd=True, color=(45, 0, 200))
+                  font_size=90, bd=True, color=(45, 30, 170))
         draw_text(object=draw, text="市域 " + str(station_type[station]["市域"]), position_x=250, position_y=1500,
-                  font_size=90, bd=True, color=(15, 0, 250))
+                  font_size=90, bd=True, color=(30, 60, 180))
+        draw_text(object=draw, text="部分市域线路未计入", position_x=250, position_y=1600,
+                  font_size=45, bd=True, color=(150, 150, 200))
+        # 对车次的编码进行排序
+        detail[station].sort()
         if len(detail[station]) > 700:
             b_x = 100
             b_y = 40
@@ -119,7 +134,8 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                 position_y += b_y
                 position_x = 900
                 line_cnt = 0
-        file_name = "D:\youyong\Github repository\RailRhythm12306\pictures\output\\" + str(r+1).rjust(4, '0') + ".png"
+        # 修改文件保存路径
+        file_name = r"D:\youyong\Github repository\RailRhythm12306\pictures\output\\" + str(r+1).rjust(4, '0') + ".png"
         new_image.save(file_name)
         continue
 
@@ -638,7 +654,6 @@ while s != "exit":
         print("Save over")
         line_cut()
         continue
-
     # 载入数据
     if s.lower() == "load":
         if (os.path.exists('train_data/train_list' + auto_date_1 + '.json') and
@@ -698,9 +713,9 @@ while s != "exit":
         key_and_prefix = s[13:]
         if '*' in key_and_prefix:
             key, prefix = key_and_prefix.split('*')
-            rank_station(num=330, key=key, prefix=prefix)
+            rank_station(num=1000, key=key, prefix=prefix)
         else:
-            rank_station(num=330, key=s[13:])
+            rank_station(num=1000, key=s[13:])
         continue
 
     # 回溯
