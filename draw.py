@@ -49,8 +49,7 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                 detail[j["station_name"]] = []
             if (j["station_train_code"][0] == 'G' or
                 j["station_train_code"][0] == 'D' and int(j["station_train_code"][1:]) > 300 or
-                j["station_train_code"][0] == 'C' and 1000 < int(j["station_train_code"][1:]) < 4000 or
-                j["station_train_code"][0] == 'C' and int(j["station_train_code"][1:]) > 5000):
+                j["station_train_code"][0] == 'C' and 1000 < int(j["station_train_code"][1:])):
                 train_type = "动分"
             elif j["station_train_code"][0] in "ZTKY0123456789":
                 train_type = "普速"
@@ -92,11 +91,16 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                   font_size=90, bd=True, color=(45, 30, 170))
         draw_text(object=draw, text="市域 " + str(station_type[station]["市域"]), position_x=250, position_y=1500,
                   font_size=90, bd=True, color=(30, 60, 180))
-        draw_text(object=draw, text="部分市域线路未计入", position_x=250, position_y=1600,
+        draw_text(object=draw, text="部分市域线路未计入", position_x=250, position_y=1630,
                   font_size=45, bd=True, color=(150, 150, 200))
         # 对车次的编码进行排序
         detail[station].sort()
-        if len(detail[station]) > 700:
+        if len(detail[station]) > 918:
+            b_x = 90
+            b_y = 38
+            font_size = 25
+            line = 30
+        elif len(detail[station]) > 690:
             b_x = 100
             b_y = 40
             font_size = 28
@@ -106,21 +110,26 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
             b_y = 45
             font_size = 31
             line = 23
-        elif len(detail[station]) > 330:
+        elif len(detail[station]) > 340:
             b_x = 130
             b_y = 50
             font_size = 35
             line = 20
-        elif len(detail[station]) > 230:
+        elif len(detail[station]) > 234:
             b_x = 160
             b_y = 65
             font_size = 45
             line = 17
-        else:
+        elif len(detail[station]) > 130:
             b_x = 200
             b_y = 75
             font_size = 52
             line = 13
+        else:
+            b_x = 265
+            b_y = 100
+            font_size = 62
+            line = 10
         line_cnt = 0
         position_x = 900
         position_y = 580
@@ -135,8 +144,12 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                 position_x = 900
                 line_cnt = 0
         # 修改文件保存路径
-        file_name = r"D:\youyong\Github repository\RailRhythm12306\pictures\output\\" + str(r+1).rjust(4, '0') + ".png"
-        new_image.save(file_name)
+        try:
+            file_name = r"D:\youyong\Github repository\RailRhythm12306\pictures\output\\" + str(r+1).rjust(5, '0') + ".png"
+            new_image.save(file_name)
+            new_image.close()
+        finally:
+            new_image.close()
         continue
 
 from datetime import datetime
