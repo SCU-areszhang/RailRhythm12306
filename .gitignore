@@ -4,4 +4,4 @@ dist
 .spec
 pictures
 generate_text.py
-keys_and_models.py
+models_and_keys.py
