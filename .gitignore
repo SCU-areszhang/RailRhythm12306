@@ -3,3 +3,5 @@ build
 dist
 .spec
 pictures
+generate_text.py
+keys_and_models.py
