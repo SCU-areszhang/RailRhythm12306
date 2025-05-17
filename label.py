@@ -430,7 +430,7 @@ except AttributeError:
 
 root = tk.Tk()
 root.title("Rail Rhythm 中国铁路时刻表查询工具")
-root.geometry("1500x900")
+root.geometry("2000x1200")
 
 color_lightgreen = "#CCFFF6"
 color_white = "#ffffff"

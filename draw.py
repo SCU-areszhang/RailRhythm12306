@@ -1,10 +1,12 @@
+import random
+
 from PIL import Image, ImageDraw, ImageFont
 # Rail Rhythm 中国铁路时刻表查询工具
 # wj_0575 2025.1
 import os.path
 import re
 import time
-
+from generate_text import *
 import requests
 import json
 import threading
@@ -21,7 +23,12 @@ color_blank = {
 # font_path_bd = 'C:\Windows\Fonts\msyhbd.ttc'
 
 # 修改后:
-background_image_path = r'D:\youyong\Github repository\RailRhythm12306\pictures\source\background.png'
+# 获取当前路径
+current_path = os.path.dirname(os.path.abspath(__file__))
+
+# 构建图片路径
+background_image_path = os.path.join(current_path, 'pictures', 'source', 'background.png')
+# 构建字体路径
 font_path_bd = r'C:\Windows\Fonts\msyhbd.ttc'
 fond_path = r'C:\Windows\Fonts\msyh.ttc'
 
@@ -40,6 +47,7 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
     rank = {}
     station_type = {}
     detail = {}
+    models = list(keys.keys())
     for i in train_list:
         # print(train_list[i])
         for j in train_list[i]:
@@ -79,6 +87,22 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
         # 透明度
         draw_text(object=draw, text=str(previous_rank + 1) + ' ' + station, position_x=250, position_y=160,
                   font_size=200, bd=True)
+        prompt = "60字左右介绍" + station + "站，包括所属行政区、铁路局，途经铁路"
+        while True:
+            # 随机选取模型
+            model = random.choice(models)
+            print(previous_rank + 1, " ", model)
+            intro = generate_text(prompt=prompt, assistant_enable=False, model=model)["text"]
+            if intro == "null":
+                print("null")
+                models.remove(model)
+            else:
+                print(intro)
+                break
+        intro = "AI简介\n" + text_enter(intro, line_char_limit=59)
+        intro.replace("（60字）", "")
+        draw_text(object=draw, text=intro, position_x=2200, position_y=200,
+                  font_size=48, bd=False, color=(25, 0, 0))
         draw_text(object=draw, text="车次总数", position_x=250, position_y=560,
                   font_size=100, bd=True, color=(100, 100, 100))
         draw_text(object=draw, text=str(train_num), position_x=250, position_y=680,
@@ -145,7 +169,7 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                 line_cnt = 0
         # 修改文件保存路径
         try:
-            file_name = r"D:\youyong\Github repository\RailRhythm12306\pictures\output\\" + str(r+1).rjust(5, '0') + ".png"
+            file_name = r"D:\youyong\Github repository\RailRhythm12306\pictures\output\\" + str(r+1).rjust(4, '0') + ".png"
             new_image.save(file_name)
             new_image.close()
         finally:
@@ -726,9 +750,9 @@ while s != "exit":
         key_and_prefix = s[13:]
         if '*' in key_and_prefix:
             key, prefix = key_and_prefix.split('*')
-            rank_station(num=1000, key=key, prefix=prefix)
+            rank_station(num=5000, key=key, prefix=prefix)
         else:
-            rank_station(num=1000, key=s[13:])
+            rank_station(num=5000, key=s[13:])
         continue
 
     # 回溯
