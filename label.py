@@ -93,7 +93,6 @@ def count_code():
             insert[3] = "?"
         pack["data"].append(insert)
     return pack
-    line_cut()
 
 def print_train(x, ask = False):
     """这个函数用于输出一个车次的信息
