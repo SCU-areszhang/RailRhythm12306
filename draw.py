@@ -15,7 +15,7 @@ color_blank = {
     '1':(100, 100, 100),'2':(100, 100, 100),'3':(100, 100, 100),'4':(100, 100, 100),'5':(100, 100, 100),
     '6':(100, 100, 100),'7':(100, 100, 100),'8':(100, 100, 100),'9':(100, 100, 100),'0':(100, 100, 100),
     'G':(220, 20, 20),'D':(80, 20, 0),'C':(255, 90, 0),'Z':(50, 140, 0), 'T':(30, 120, 255),
-    'K':(0, 50, 100),'S':(130, 130, 60), 'Y':(200, 20, 255)
+    'K':(0, 50, 100),'S':(250, 160, 130), 'Y':(200, 20, 255)
 }
 
 # 修改前（错误示例）:
@@ -28,6 +28,8 @@ current_path = os.path.dirname(os.path.abspath(__file__))
 
 # 构建图片路径
 background_image_path = os.path.join(current_path, 'pictures', 'source', 'background.png')
+# 构建保存位置路径
+save_path = os.path.join(current_path, 'pictures', 'output')
 # 构建字体路径
 font_path_bd = r'C:\Windows\Fonts\msyhbd.ttc'
 fond_path = r'C:\Windows\Fonts\msyh.ttc'
@@ -72,10 +74,12 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                 train_prefix = j["station_train_code"][0]
             if train_type in key and train_prefix in prefix:
                 rank[j["station_name"]] += 1
-                detail[j["station_name"]].append(j["station_train_code"])
+            detail[j["station_name"]].append(j["station_train_code"])
     rank = sorted(rank.items(), key=lambda item: item[1], reverse=True)[:num]
     previous_rank = 0
     previous_num = 0
+    # 输出总览信息
+    print("Total station number", len(rank))
 
     for r, (station, train_num) in enumerate(rank):
 
@@ -87,13 +91,13 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
         # 透明度
         draw_text(object=draw, text=str(previous_rank + 1) + ' ' + station, position_x=250, position_y=160,
                   font_size=200, bd=True)
-        prompt = "60字左右介绍" + station + "站，包括所属行政区、铁路局，途经铁路"
+        prompt = "50-80字介绍" + station + "站，包括所属行政区、铁路局，途经铁路"
         while True:
             # 随机选取模型
             model = random.choice(models)
             print(previous_rank + 1, " ", model)
             intro = generate_text(prompt=prompt, assistant_enable=False, model=model)["text"]
-            if intro == "null":
+            if intro == "null" or len(intro) < 30:
                 print("null")
                 models.remove(model)
             else:
@@ -115,7 +119,7 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                   font_size=90, bd=True, color=(45, 30, 170))
         draw_text(object=draw, text="市域 " + str(station_type[station]["市域"]), position_x=250, position_y=1500,
                   font_size=90, bd=True, color=(30, 60, 180))
-        draw_text(object=draw, text="部分市域线路未计入", position_x=250, position_y=1630,
+        draw_text(object=draw, text="部分市域车次未统计", position_x=250, position_y=1630,
                   font_size=45, bd=True, color=(150, 150, 200))
         # 对车次的编码进行排序
         detail[station].sort()
@@ -169,7 +173,7 @@ def rank_station(num=500, key="动分动集普速", prefix="GDCZTKSYP"):
                 line_cnt = 0
         # 修改文件保存路径
         try:
-            file_name = r"D:\youyong\Github repository\RailRhythm12306\pictures\output\\" + str(r+1).rjust(4, '0') + ".png"
+            file_name = os.path.join(save_path, str(r+1).rjust(4, '0') + station + '.png')
             new_image.save(file_name)
             new_image.close()
         finally:
@@ -746,13 +750,13 @@ while s != "exit":
     if s.lower() == "sum":
         count_code()
         continue
-    if "rank_station" in s.lower():
-        key_and_prefix = s[13:]
+    if "rank" in s.lower():
+        key_and_prefix = s[5:]
         if '*' in key_and_prefix:
             key, prefix = key_and_prefix.split('*')
             rank_station(num=5000, key=key, prefix=prefix)
         else:
-            rank_station(num=5000, key=s[13:])
+            rank_station(num=5000, key=s[5:])
         continue
 
     # 回溯
