@@ -337,9 +337,6 @@ def get_train_info(x, date=auto_date):
             train_list[x] = data
         finally:
             lock_train_list.release()
-            return None
-    return None
-
 
 try_times = 5
 def get_all_target_info(key, mode):
