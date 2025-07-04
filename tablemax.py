@@ -82,8 +82,11 @@ def setup_plot(station_dict, table_name):
     plt.xticks(ticks_x, labels_x, rotation=45, fontsize=9)
     plt.yticks(ticks_y, labels_y, fontsize=9)
     plt.grid(True, color='lightgrey', linestyle='-', linewidth=0.4)
-    # 设置标题
-    plt.title(table_name["name"], fontsize=30, weight='bold')
+    # 设置标题，标题上移一段距离
+    plt.title(table_name["name"], fontsize=30, y=1.05, weight='bold', x=0.5, ha='center')
+    # 设置副标题
+    plt.suptitle("         https://github.com/wj0575/RailRhythm12306", fontsize=8, font='consolas',
+                 y=0.868, color=generate_color(0.5, 1), x=0.5, ha='center')
 
     # 设置横纵坐标起止点
     plt.xlim(330, 1440)
@@ -92,34 +95,37 @@ def setup_plot(station_dict, table_name):
     plt.gca().set_aspect(6.5)
     return fig
 
-
-import random
-
-
-def generate_color(seed):
-    random.seed(seed)  # 设置随机种子以确保结果可重复
-
-    if seed > 0.2:  # 大数
-        r = random.random() * 64 + 191 # 127-255
-        g = random.random() * 96  # 0-64
-        b = random.random() * 16  # 0-64
+def generate_color(seed, mark):
+    if seed > mark:  # 大数
+        r = random.random() * 100 + 155 # 127-255
+        g = random.random() * 100  # 0-64
+        b = random.random() * 32  # 0-64
     else:  # 小数
         while True:
-            r = random.random() * 64 + 64  # 64-128
+            r = random.random() * 128  # 64-128
             g = random.random() * 255  # 0-255
             b = random.random() * 255  # 0-255
-            if r + g + b < 450:
+            if 128 < r + g * 0.8 + b < 512:
                 break
 
     return "#{:02x}{:02x}{:02x}".format(int(r), int(g), int(b))
 
-def find_pass(train_list, station_list, find_access_num, auto_judge=True, up_or_dn = 0):
+def find_pass(train_list, station_list, find_access_num, auto_judge, delete_list):
     pass_list = []
     for train in train_list:
+        print(train)
+        flag = False
+        for delete_train in delete_list[0]:
+            if no_list[delete_train] == train:
+                flag = True
+        if flag:
+            continue
         cnt = 0
         pack = []
         for station_data in train_list[train]:
             if station_data["station_name"] in station_list:
+                if(station_data["station_train_code"] + station_data["station_name"]) in delete_list[1]:
+                    continue
                 pack.append({
                     "station_name": station_data["station_name"],
                     "station_train_code": station_data["station_train_code"],
@@ -148,9 +154,22 @@ def find_pass(train_list, station_list, find_access_num, auto_judge=True, up_or_
                 if r == '1':
                     pass_list.append(pack)
     return pass_list
+def select_pass(line_name, pass_list):
+    if line_name == "京沪":
+        # 使用列表推导式创建新列表（避免遍历时修改原列表的问题）
+        filtered_list = [
+            train for train in pass_list
+            if not (
+                len(train) == 2 and
+                {train[0]["station_name"], train[1]["station_name"]} <= {"昆山南", "上海虹桥", "上海"}
+            )
+        ]
+        return filtered_list
+    return pass_list
 
 
-def draw_line(train_data, station_dict, mark, up_or_dn = 0):
+
+def draw_line(train_data, station_dict, mark, code = 0, up_or_dn = 0):
     x_list = []
     y_list = []
     for station in train_data:
@@ -169,18 +188,42 @@ def draw_line(train_data, station_dict, mark, up_or_dn = 0):
             return
     # 求首尾点连线斜率的绝对值
     k = abs((y_list[-1] - y_list[0]) / (x_list[-1] - x_list[0]))
-    print(k)
-    color = generate_color(k)
+    # print(k)
+    color = generate_color(k, mark)
     if x_list and y_list:
-        # 绘制折线图，没有点，只有线
         plt.plot(x_list, y_list, marker='', linestyle='-', color=color, linewidth=0.5)
+    # 如果code为1，则在图上标注车次
+    if code == 1:
+        if up_or_dn == 1:
+            rotation = -45
+            ha = 'left'
+            va = 'top'
+            ha_1 = 'right'
+            va_1 = 'bottom'
+        elif up_or_dn == 2:
+            rotation = 45
+            ha = 'right'
+            va = 'top'
+            ha_1 = 'left'
+            va_1 = 'bottom'
+        else:
+            rotation = 90
+            ha = 'right'
+            va = 'top'
+            ha_1 = 'right'
+            va_1 = 'top'
+        text = train_data[0]["station_train_code"]
+        plt.text(x_list[0], y_list[0], text, fontsize=3, color=color, font='Arial',
+                 ha=ha, va=va, rotation=rotation)
+        plt.text(x_list[-1], y_list[-1], text, fontsize=3, color=color, font='Arial',
+                 ha=ha_1, va=va_1, rotation=rotation)
 
 line_pack = {
     "京沪": {
         "line_name": "京沪高速铁路",
         "mark": 0.2,
         "station_dict": {
-    "北京南": 0,
+    "北京南": -10, # 补偿限速
     "廊坊": 60,
     "天津南": 122,
     "沧州西": 210,
@@ -204,10 +247,15 @@ line_pack = {
     "昆山南": 1268,
     "上海虹桥": 1318,
     "上海": 1335
-        }
+        },
+        "delete_list": [
+            ["G1830", "D1606", "D1605", "D1603", "D2777", "G1829", "D1643"],
+            {"G380德州东"}
+        ],
     },
     "杭甬": {
         "line_name": "杭甬客运专线",
+        "mark": 0.2,
         "station_dict": {
     "杭州东": 0,
     "杭州南": 5,
@@ -250,9 +298,12 @@ line_pack = {
 if __name__ == "__main__":
     # instruction = input("Input instruction: ")
     # date = input("Input date: ")
-    instruction = "沪宁 2"
+    instruction = "京沪 0"
     date = "20250703"
+    code = 1
     target_line, up_or_dn = instruction.split(" ")
+    mark = line_pack[target_line]["mark"]
+    delete_list = line_pack[target_line]["delete_list"]
     up_or_dn = int(up_or_dn)
 
     station_dict = scale_values(line_pack[target_line]["station_dict"], new_max=60)
@@ -263,11 +314,9 @@ if __name__ == "__main__":
         table_name["name"] += "下行"
     elif up_or_dn == 2:
         table_name["name"] += "上行"
-    # 导入train_list,no_list
-    # date = input("Input date: ")
 
-    file_name_train = 'train_data/train_list'+date+'.json'
-    file_name_no = 'train_data/no_list'+date+'.json'
+    file_name_train = 'train_data/train_list' + date + '.json'
+    file_name_no = 'train_data/no_list' + date + '.json'
     if os.path.exists(file_name_train) and os.path.exists(file_name_no):
         with open(file_name_train, 'r') as f:
             train_list = json.load(f)
@@ -281,17 +330,22 @@ if __name__ == "__main__":
     # 将station_dict的车站名称提取出来
     stations = list(station_dict.keys())
     # 筛选出符合条件的车次，即车次连续经过至少两个站
-    pass_list = find_pass(train_list, stations, 2, auto_judge=True)
-    print(pass_list)
+    pass_list = find_pass(train_list, stations, 2, delete_list=delete_list, auto_judge=True)
+
+    pass_list = select_pass(target_line, pass_list)
+
+    # print(pass_list)
 
     # 调用绘制框架函数
     figure = setup_plot(station_dict, table_name)
 
     for train in pass_list:
         # 在每个车次的基础上，调用函数，绘制折线图
-        draw_line(train, station_dict, up_or_dn=up_or_dn)
+        draw_line(train, station_dict, mark=mark,code=code, up_or_dn=up_or_dn)
     # 保存图片
     plt.savefig(table_name["name"] + ".png", dpi=300)
+    # 给出路径
+    print("Picture saved in " + table_name["name"] + ".png")
     # plt.show()
 
 
