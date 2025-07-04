@@ -4,6 +4,7 @@ import random
 import json
 
 from matplotlib import font_manager
+from requests import delete
 
 font = font_manager.FontProperties(fname='C:/Windows/Fonts/simhei.ttf')  # 黑体字体路径，不同系统路径可能不同
 plt.rcParams['font.family'] = font.get_name()
@@ -161,6 +162,12 @@ def find_pass(train_list, station_list, find_access_num, auto_judge, delete_list
                     pass_list.append(pack)
     return pass_list
 def select_pass(line_name, pass_list):
+    """
+    这个函数用于筛选符合条件的车次。特殊判断法。新增加线路时要手动添加特征。
+    :param line_name:
+    :param pass_list:
+    :return:
+    """
     if line_name == "京沪":
         # 使用列表推导式创建新列表（避免遍历时修改原列表的问题）
         filtered_list = [
@@ -171,9 +178,33 @@ def select_pass(line_name, pass_list):
             )
         ]
         return filtered_list
+    elif line_name == "杭甬" or line_name == "杭深":
+        filtered_list = [
+            train for train in pass_list
+            if not (
+                len(train) == 2 and
+                {train[0]["station_name"], train[1]["station_name"]} <= {"杭州南", "杭州东"}
+            )
+        ]
+        return filtered_list
+    elif line_name == "沪昆":
+        filtered_list = [
+            train for train in pass_list
+            if not (
+                len(train) == 2 and
+                {train[0]["station_name"], train[1]["station_name"]} <= {"上海虹桥", "上海松江", "上海南"} or
+                {train[0]["station_name"], train[1]["station_name"]} <= {"杭州南", "杭州东"} or
+                {train[0]["station_name"], train[1]["station_name"]} <= {"贵安", "贵阳北"} or
+                {train[0]["station_name"], train[1]["station_name"]} <= {"贵阳北", "贵阳东"}
+            ) and not(
+                train[0]["station_train_code"][0] in "KTZY" or
+                train[0]["station_train_code"][0] == 'D' and int(train[0]["station_train_code"][1:]) < 400 or
+                train[0]["station_train_code"][0] == 'C' and int(train[0]["station_train_code"][1:]) < 1000 or
+                train[0]["station_train_code"][0] == 'C' and 4000 < int(train[0]["station_train_code"][1:]) < 5000
+            )
+        ]
+        return filtered_list
     return pass_list
-
-
 
 def draw_line(train_data, station_dict, mark, code = 0, up_or_dn = 0):
     x_list = []
@@ -181,10 +212,10 @@ def draw_line(train_data, station_dict, mark, code = 0, up_or_dn = 0):
     for station in train_data:
         if station["station_name"] in station_dict:
             if len(station["arrive_time"]) == 5:
-                x_list.append(time_transfer(station["arrive_time"]))
+                x_list.append(time_transfer(station["arrive_time"]) + int(station["arrive_day_diff"]) * 1440)
                 y_list.append(station_dict[station["station_name"]])
             if len(station["start_time"]) == 5:
-                x_list.append(time_transfer(station["start_time"]))
+                x_list.append(time_transfer(station["start_time"]) + int(station["arrive_day_diff"]) * 1440)
                 y_list.append(station_dict[station["station_name"]])
     if (x_list[0] - x_list[-1]) * (y_list[-1] - y_list[0]) > 0:
         if up_or_dn == 1:
@@ -208,16 +239,16 @@ def draw_line(train_data, station_dict, mark, code = 0, up_or_dn = 0):
             va_1 = 'bottom'
         elif up_or_dn == 2:
             rotation = 45
-            ha = 'right'
-            va = 'top'
-            ha_1 = 'left'
-            va_1 = 'bottom'
-        else:
-            rotation = 90
-            ha = 'right'
-            va = 'top'
+            ha = 'left'
+            va = 'bottom'
             ha_1 = 'right'
             va_1 = 'top'
+        else:
+            rotation = 90
+            ha = 'center'
+            va = 'bottom'
+            ha_1 = 'center'
+            va_1 = 'bottom'
         text = train_data[0]["station_train_code"]
         plt.text(x_list[0], y_list[0], text, fontsize=3, color=color, font='Arial',
                  ha=ha, va=va, rotation=rotation)
@@ -229,7 +260,7 @@ line_pack = {
         "line_name": "京沪高速铁路",
         "mark": 0.2,
         "station_dict": {
-    "北京南": -10, # 补偿限速
+    "北京南": 0-10, # 补偿限速
     "廊坊": 60,
     "天津南": 122,
     "沧州西": 210,
@@ -260,8 +291,8 @@ line_pack = {
         ],
     },
     "杭甬": {
-        "line_name": "杭甬客运专线",
-        "mark": 0.2,
+        "line_name": "杭甬客运专线-甬台温铁路",
+        "mark": 0.3,
         "station_dict": {
     "杭州东": 0,
     "杭州南": 16,
@@ -270,33 +301,56 @@ line_pack = {
     "余姚北": 106,
     "庄桥": 147,
     "宁波": 155,
-    "奉化"
-}
+    "奉化": 193,
+    "宁海": 227,
+    "三门县": 261,
+    "临海": 284,
+    "台州西": 307,
+    "温岭": 331,
+    "雁荡山": 354,
+    "乐清": 395,
+    "温州北": 412,
+    "温州南": 430,
+    "瑞安": 470,
+    "平阳": 487,
+    "苍南": 524,
+},
+        "delete_list": [[],[]]
     },
-    "沪宁": {
-        "line_name": "沪宁城际铁路",
+    "沪昆": {
+        "line_name": "沪昆高速铁路（东段）",
+        "mark": 0.2,
         "station_dict": {
-    "上海": 0,
-    "上海西": 5,
-    "南翔北": 14,
-    "安亭北": 29,
-    "花桥": 40,
-    "昆山南": 50,
-    "阳澄湖": 59,
-    "苏州园区": 74,
-    "苏州": 84,
-    "苏州新区": 94,
-    "无锡新区": 113,
-    "无锡": 126,
-    "惠山": 140,
-    "戚墅堰": 154,
-    "常州": 165,
-    "丹阳": 210,
-    "丹徒": 224,
-    "镇江": 237,
-    "宝华山": 274,
-    "仙林": 288,
-    "南京": 301
+    "上海虹桥": 0-5, # 修正
+    "上海南": 0,
+    "上海松江": 31,
+    "金山北": 48,
+    "嘉善南": 67,
+    "嘉兴南": 84,
+    "桐乡": 112,
+    "海宁西": 133,
+    "临平南": 144,
+    "杭州东": 159,
+    "杭州南": 175,
+    "诸暨": 225,
+    "义乌": 268,
+    "金华": 320,
+    "龙游": 369,
+    "衢州": 398,
+    "江山": 428,
+    "玉山南": 466,
+    "上饶": 500,
+    "弋阳": 560,
+    "鹰潭北": 601,
+    "抚州东": 644,
+    "进贤南": 683,
+    "南昌西": 741,
+    "高安": 788,
+    "新余北": 868,
+    "宜春": 917,
+    "萍乡北": 978,
+    "醴陵东": 1007,
+    "长沙南": 1083,
 }
     }
 }
@@ -306,13 +360,16 @@ if __name__ == "__main__":
     # instruction = input("Input instruction: ")
     # date = input("Input date: ")
     """"""
-    instruction = "京沪 1 1"
+    instruction = "沪昆 2 1"
     date = "20250703"
     background_text = ["", "#EEEEFF", 10, 20] # 字号，个数
     """"""
     target_line, up_or_dn, code= instruction.split(" ")
     mark = line_pack[target_line]["mark"]
-    delete_list = line_pack[target_line]["delete_list"]
+    if "delete_list" in line_pack[target_line]:
+        delete_list = line_pack[target_line]["delete_list"]
+    else:
+        delete_list = [[],[]]
     up_or_dn, code= int(up_or_dn), int(code)
 
     station_dict = scale_values(line_pack[target_line]["station_dict"], new_max=60)
