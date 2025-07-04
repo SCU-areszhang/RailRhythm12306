@@ -87,7 +87,13 @@ def setup_plot(station_dict, table_name):
     # 设置副标题
     plt.suptitle("         https://github.com/wj0575/RailRhythm12306", fontsize=8, font='consolas',
                  y=0.868, color=generate_color(0.5, 1), x=0.5, ha='center')
-
+    # 设置背景文字，放置在最底层
+    bg_setting = table_name["background_text"]
+    if bg_setting[0]!= "":
+        for i in range(0, bg_setting[3]):
+            plt.text(random.random()*0.8+0.1, random.random()*0.8+0.1, bg_setting[0],
+                     fontsize=bg_setting[2], color=bg_setting[1], rotation=random.random()*360,
+                     ha='center', va='center', transform=plt.gca().transAxes, zorder=0)
     # 设置横纵坐标起止点
     plt.xlim(330, 1440)
     plt.ylim(0, max(ticks_y))
@@ -113,7 +119,7 @@ def generate_color(seed, mark):
 def find_pass(train_list, station_list, find_access_num, auto_judge, delete_list):
     pass_list = []
     for train in train_list:
-        print(train)
+        # print(train)
         flag = False
         for delete_train in delete_list[0]:
             if no_list[delete_train] == train:
@@ -258,12 +264,13 @@ line_pack = {
         "mark": 0.2,
         "station_dict": {
     "杭州东": 0,
-    "杭州南": 5,
-    "绍兴北": 18,
-    "绍兴东": 28,
-    "余姚北": 40,
-    "庄桥": 54,
-    "宁波": 60,
+    "杭州南": 16,
+    "绍兴北": 43,
+    "绍兴东": 74,
+    "余姚北": 106,
+    "庄桥": 147,
+    "宁波": 155,
+    "奉化"
 }
     },
     "沪宁": {
@@ -298,17 +305,20 @@ line_pack = {
 if __name__ == "__main__":
     # instruction = input("Input instruction: ")
     # date = input("Input date: ")
-    instruction = "京沪 0"
+    """"""
+    instruction = "京沪 1 1"
     date = "20250703"
-    code = 1
-    target_line, up_or_dn = instruction.split(" ")
+    background_text = ["", "#EEEEFF", 10, 20] # 字号，个数
+    """"""
+    target_line, up_or_dn, code= instruction.split(" ")
     mark = line_pack[target_line]["mark"]
     delete_list = line_pack[target_line]["delete_list"]
-    up_or_dn = int(up_or_dn)
+    up_or_dn, code= int(up_or_dn), int(code)
 
     station_dict = scale_values(line_pack[target_line]["station_dict"], new_max=60)
     table_name = {
-        "name": line_pack[target_line]["line_name"] + date
+        "name": line_pack[target_line]["line_name"] + date,
+        "background_text": background_text
     }
     if up_or_dn == 1:
         table_name["name"] += "下行"
@@ -341,7 +351,7 @@ if __name__ == "__main__":
 
     for train in pass_list:
         # 在每个车次的基础上，调用函数，绘制折线图
-        draw_line(train, station_dict, mark=mark,code=code, up_or_dn=up_or_dn)
+        draw_line(train, station_dict, mark=mark, code=code, up_or_dn=up_or_dn)
     # 保存图片
     plt.savefig(table_name["name"] + ".png", dpi=300)
     # 给出路径
