@@ -102,7 +102,60 @@ def setup_plot(station_dict, table_name):
     plt.gca().set_aspect(6.5)
     return fig
 
-def generate_color(seed, mark):
+
+from request_emu_no import get_emu_no
+def generate_color(seed, mark, train_code=""):
+    if train_code != "":
+        print("get color for", train_code)
+        if train_code[0] in "GDC":
+            pack = get_emu_no(train_code)
+            type = pack["type"]
+            if '380' in type:
+                if '380A' in type:
+                    return '#0039FF' # 蓝屏蓝
+                elif '380B' in type:
+                    return '#22ABFF' # 湖蓝
+                elif '380C' in type:
+                    return '#00D4FF' # 天蓝
+                elif '380D' in type:
+                    return '#6997C4' # 蓝灰
+                else:
+                    return '#000000'
+            elif 'CRH1' in type:
+                return '#01F000' # 浅绿
+            elif 'CRH2' in type:
+                return '#84B017' # 橄榄
+            elif 'CRH3' in type:
+                return '#228A21' # 深绿
+            elif 'CRH5' in type:
+                return '#00F2C0' # 二次元青
+            elif 'CRH6' in type:
+                return '#C0E079' # 嫩绿
+            elif 'CR400AF' in type:
+                if 'S' in type:
+                    return '#D500FF' # 紫红
+                if 'Z' in type:
+                    return '#FF7390' # 洋红
+                if 'E' in type:
+                    return '#7200CF' # 深紫
+                else:
+                    return '#FF2828' # 朱红
+            elif 'CR400BF' in type:
+                if 'S' in type:
+                    return '#FF7623' # 橙色
+                if 'Z' in type:
+                    return '#9C5236' # 红褐
+                else:
+                    return '#D19328' # 黄褐
+            elif 'CR300AF' in type:
+                return '#E9B2FF'  # 淡紫
+            elif 'CR300BF' in type:
+                return '#A8A7F2'  # 淡蓝紫
+            elif 'CR200J' in type:
+                return '#8F9487'  # 灰
+            else:
+                return '#000000'
+
     if seed > mark:  # 大数
         r = random.random() * 100 + 155 # 127-255
         g = random.random() * 100  # 0-64
@@ -123,7 +176,7 @@ def find_pass(train_list, station_list, find_access_num, auto_judge, delete_list
         # print(train)
         flag = False
         for delete_train in delete_list[0]:
-            if no_list[delete_train] == train:
+            if delete_train in no_list and no_list[delete_train] == train:
                 flag = True
         if flag:
             continue
@@ -187,15 +240,67 @@ def select_pass(line_name, pass_list):
             )
         ]
         return filtered_list
+    elif line_name == "京武":
+        filtered_list = [
+            train for train in pass_list
+            if not (
+                len(train) == 2 and (
+                {train[0]["station_name"], train[1]["station_name"]} <= {"北京西", "北京丰台"} or
+                {train[0]["station_name"], train[1]["station_name"]} <= {"武汉", "汉口"} or
+                {train[0]["station_name"], train[1]["station_name"]} <= {"新乡东", "郑州东"}
+                and train[0]["station_train_code"] != "G6624")
+            ) and not (
+                train[0]["station_train_code"][0] in "KTZY" or
+                train[0]["station_train_code"][0] == 'D' and int(train[0]["station_train_code"][1:]) < 400 or
+                train[0]["station_train_code"][0] == 'C' and int(train[0]["station_train_code"][1:]) < 1000 or
+                train[0]["station_train_code"][0] == 'C' and 4000 < int(train[0]["station_train_code"][1:]) < 5000
+            )
+        ]
+        return filtered_list
     elif line_name == "沪昆":
         filtered_list = [
             train for train in pass_list
             if not (
-                len(train) == 2 and
+                len(train) == 2 and (
                 {train[0]["station_name"], train[1]["station_name"]} <= {"上海虹桥", "上海松江", "上海南"} or
                 {train[0]["station_name"], train[1]["station_name"]} <= {"杭州南", "杭州东"} or
                 {train[0]["station_name"], train[1]["station_name"]} <= {"贵安", "贵阳北"} or
-                {train[0]["station_name"], train[1]["station_name"]} <= {"贵阳北", "贵阳东"}
+                {train[0]["station_name"], train[1]["station_name"]} <= {"贵阳北", "贵阳东"} or
+                {train[0]["station_name"], train[1]["station_name"]} <= {"北京西", "北京丰台"} or
+                {train[0]["station_name"], train[1]["station_name"]} <= {"武汉", "汉口"})
+            ) and not(
+                train[0]["station_train_code"][0] in "KTZY" or
+                train[0]["station_train_code"][0] == 'D' and int(train[0]["station_train_code"][1:]) < 400 or
+                train[0]["station_train_code"][0] == 'C' and int(train[0]["station_train_code"][1:]) < 1000 or
+                train[0]["station_train_code"][0] == 'C' and 4000 < int(train[0]["station_train_code"][1:]) < 5000
+            )
+        ]
+        return filtered_list
+    elif line_name == "徐兰":
+        filtered_list = [
+            train for train in pass_list
+            if not (
+                    len(train) == 2 and (
+                    {train[0]["station_name"], train[1]["station_name"]} <= {"西安北", "渭南北"} or
+                    {train[0]["station_name"], train[1]["station_name"]} <= {"郑州", "郑州东"})
+            ) and not (
+                train[0]["station_name"] == "渭南北" or train[-1]["station_name"] == "渭南北"
+            ) and not(
+                train[0]["station_train_code"][0] in "KTZY" or
+                train[0]["station_train_code"][0] == 'D' and int(train[0]["station_train_code"][1:]) < 400 or
+                train[0]["station_train_code"][0] == 'C' and int(train[0]["station_train_code"][1:]) < 1000 or
+                train[0]["station_train_code"][0] == 'C' and 4000 < int(train[0]["station_train_code"][1:]) < 5000
+            )
+        ]
+        return filtered_list
+    elif line_name == "沪宁":
+        filtered_list = [
+            train for train in pass_list
+            if not (
+                len(train) <= 3 and (
+                    {train[0]["station_name"], train[1]["station_name"]} <=
+                    {"上海虹桥", "上海", "昆山南", "南京南"} or
+                    {train[0]["station_name"], train[1]["station_name"]} <= {"芜湖", "芜湖南"})
             ) and not(
                 train[0]["station_train_code"][0] in "KTZY" or
                 train[0]["station_train_code"][0] == 'D' and int(train[0]["station_train_code"][1:]) < 400 or
@@ -226,11 +331,14 @@ def draw_line(train_data, station_dict, mark, code = 0, up_or_dn = 0):
     # 求首尾点连线斜率的绝对值
     k = abs((y_list[-1] - y_list[0]) / (x_list[-1] - x_list[0]))
     # print(k)
-    color = generate_color(k, mark)
+    if code < 2:
+        color = generate_color(k, mark)
+    else:
+        color = generate_color(k, mark, train_code=train_data[0]["station_train_code"])
     if x_list and y_list:
         plt.plot(x_list, y_list, marker='', linestyle='-', color=color, linewidth=0.5)
     # 如果code为1，则在图上标注车次
-    if code == 1:
+    if code >= 1:
         if up_or_dn == 1:
             rotation = -45
             ha = 'left'
@@ -384,6 +492,116 @@ line_pack = {
             "香港西九龙": 2291+142+25-80,
         }
     },
+    "京武": {
+        "line_name": "京广高速铁路京武段",
+        "mark": 0.21,
+        "station_dict": {
+            "北京西": -10,
+            "北京丰台": 0,
+            "涿州东": 55,
+            "高碑店东": 76,
+            "徐水东": 108,
+            "保定东": 132,
+            "定州东": 194,
+            "正定机场": 237,
+            "石家庄": 274,
+            "高邑西": 325,
+            "邢台东": 396,
+            "邯郸东": 449,
+            "安阳东": 509,
+            "鹤壁东": 555,
+            "新乡东": 619,
+            "郑州东": 686,
+            "许昌东": 777,
+            "漯河西": 841,
+            "驻马店西": 905,
+            "明港东": 973,
+            "信阳东": 1023,
+            "孝感北": 1096,
+            "武汉": 1222,
+            "汉口": 1235
+        }
+    },
+    "徐兰": {
+        "line_name": "徐兰高速铁路",
+        "mark": 0.175,
+        "station_dict": {
+            "徐州东": -3,
+            "萧县北": 38,
+            "永城北": 78,
+            "砀山南": 105,
+            "商丘": 167,
+            "民权北": 217,
+            "兰考南": 252,
+            "开封北": 305,
+            "郑州东": 357,
+            "郑州西": 399,
+            "巩义南": 450,
+            "洛阳龙门": 500,
+            "渑池南": 565,
+            "三门峡南": 623,
+            "灵宝西": 671,
+            "华山北": 759,
+            "渭南北": 817,
+            "西安北": 880,
+            "西安": 900, # 联络线
+            "咸阳西": 910,
+            "杨陵南": 969,
+            "岐山": 1010,
+            "宝鸡南": 1047,
+            "东岔": 1114,
+            "天水南": 1179,
+            "秦安": 1219,
+            "通渭": 1275,
+            "下小岔": 1310,
+            "定西北": 1354,
+            "榆中": 1401,
+            "兰州西": 1448
+        },
+    },
+    "沪宁": {
+        "line_name": "沪宁城际铁路-宁安城际铁路",
+        "mark": 0.285,
+        "station_dict": {
+            "上海虹桥": -3,
+            "上海": -6,
+            "上海西": 5,
+            "南翔北": 14,
+            "安亭北": 29,
+            "花桥": 40,
+            "昆山南": 50,
+            "阳澄湖": 59,
+            "苏州园区": 74,
+            "苏州": 84,
+            "苏州新区": 94,
+            "无锡新区": 113,
+            "无锡": 126,
+            "惠山": 140,
+            "戚墅堰": 154,
+            "常州": 165,
+            "丹阳": 210,
+            "丹徒": 224,
+            "镇江": 237,
+            "宝华山": 274,
+            "仙林": 288,
+            "南京": 301,
+            "南京南": 320,
+            "江宁西": 25+320,
+            "马鞍山东": 42+320,
+            "当涂东": 57+320,
+            "芜湖": 85+320,
+            "芜湖南": 97+320,
+            "繁昌西": 126+320,
+            "铜陵": 161+320,
+            "池州": 211+320,
+            "安庆": 257+320,
+            "安庆西": 286+320,
+        },
+        "delete_list": [
+            [],
+            {"G7357上海虹桥", "G7360上海虹桥"}
+        ]
+    },
     "金山": {
         "line_name": "金山铁路",
         "mark": 0.33,
@@ -407,8 +625,8 @@ if __name__ == "__main__":
     # instruction = input("Input instruction: ")
     # date = input("Input date: ")
     """"""
-    instruction = "金山 0 1"
-    date = "20250703"
+    instruction = "沪宁 0 1"
+    date = "20250706"
     background_text = ["", "#EEEEFF", 10, 20] # 字号，个数
     """"""
     target_line, up_or_dn, code= instruction.split(" ")
