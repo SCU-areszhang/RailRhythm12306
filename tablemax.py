@@ -361,7 +361,7 @@ def draw_line(train_data, station_dict, mark, code = 0, up_or_dn = 0):
         code_1 = train_data[-1]["station_train_code"]
         plt.text(x_list[0], y_list[0], code, fontsize=3, color=color, font='Arial',
                  ha=ha, va=va, rotation=rotation)
-        plt.text(x_list[-1], y_list[-1], text, fontsize=3, color=color, font='Arial',
+        plt.text(x_list[-1], y_list[-1], code_1, fontsize=3, color=color, font='Arial',
                  ha=ha_1, va=va_1, rotation=rotation)
 
 line_pack = {
@@ -626,7 +626,7 @@ if __name__ == "__main__":
     # instruction = input("Input instruction: ")
     # date = input("Input date: ")
     """"""
-    instruction = "沪宁 0 1"
+    instruction = "杭甬 1 2"
     date = "20250706"
     background_text = ["", "#EEEEFF", 10, 20] # 字号，个数
     """"""

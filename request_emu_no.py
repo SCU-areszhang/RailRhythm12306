@@ -2,7 +2,7 @@ import requests
 import time
 
 def get_emu_no(train_number):
-    time.sleep(1)
+    time.sleep(3)
     url = "https://api.rail.re/train/" + train_number
     headers = {
         "Accept": "application/json, text/javascript, */*; q=0.01",
