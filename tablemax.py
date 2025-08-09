@@ -657,6 +657,7 @@ line_pack = {
             " ": 60,
         }
     }
+
 }
 
 
@@ -664,7 +665,7 @@ if __name__ == "__main__":
     # instruction = input("Input instruction: ")
     # date = input("Input date: ")
     """"""
-    instruction = "杭甬 1 2"
+    instruction = "京哈 1 1"
     date = "20250706"
     background_text = ["", "#EEEEFF", 10, 20] # 字号，个数
     """"""
