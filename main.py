@@ -4,7 +4,6 @@ import os.path
 import re
 import time
 
-import requests
 import json
 import threading
 
@@ -307,6 +306,7 @@ def get_train_no(x, date=auto_date_1):
     由于12306一次返回最多200条匹配车次的train_no编号，
     所以当输入的车次号数字部分不少于两位的时候，
     此函数返回的字典中将包含所有匹配车次的train_no编号"""
+    import requests
     params_train_no = {"keyword": x, "date": date}
     resp = requests.get(url=url_train_no, params=params_train_no, headers=headers)
     if resp.status_code == 200:
@@ -320,6 +320,7 @@ def get_train_no(x, date=auto_date_1):
 
 
 def get_train_info(x, date=auto_date):
+    import requests
     params_train_info = {"leftTicketDTO.train_no": x, "leftTicketDTO.train_date": date, "rand_code": ""}
     resp = requests.get(url=url_train_info, params=params_train_info, headers=headers)
     if resp.status_code == 200:
@@ -477,11 +478,14 @@ trace_code = 0
 trace_max = 0
 city_station = {}
 
-print("Welcome to the Rail Rhythm railway timetable query tool")
-if os.path.exists('global_data/city_station.json'):
-    with open('global_data/city_station.json', 'r') as f1:
-        city_station = json.load(f1)
-print("Current date setting:", auto_date)
+if __name__ == "__main__":
+    print("Welcome to the Rail Rhythm railway timetable query tool")
+    if os.path.exists('global_data/city_station.json'):
+        with open('global_data/city_station.json', 'r') as f1:
+            city_station = json.load(f1)
+    print("Current date setting:", auto_date)
+else:
+    s = "exit"
 while s != "exit":
     s = input("Input instruction: ")
     s = s.lower()
